@@ -58,6 +58,50 @@ const results = useBatchQuery([
 
 Each result in the array is a React Query result object (with `data`, `isLoading`, etc).
 
+## API Client and AuthProvider Interfaces
+
+### API Client Interface Example
+```typescript
+export interface DjangoNextApi {
+  _authConfig?: DjangoNextAuthConfig;
+  // Add your generated endpoint methods here, e.g.:
+  getUser(params: any): Promise<any>;
+  // ...
+}
+
+export interface DjangoNextAuthConfig {
+  loginUrl?: string;
+  logoutUrl?: string;
+  userUrl?: string;
+  refreshUrl?: string;
+}
+```
+
+### AuthProvider Props Interface
+```typescript
+import { DjangoNextApi, DjangoNextAuthConfig } from '@django-next/client';
+
+interface AuthProviderProps {
+  api: DjangoNextApi;
+  auth?: DjangoNextAuthConfig; // Optional runtime override
+  children: React.ReactNode;
+}
+```
+
+### Usage Example (with runtime config)
+```typescript
+import { createDjangoClient, AuthProvider } from '@django-next/client';
+
+const client = createDjangoClient(
+  { baseUrl, apiClass, hooksObject, auth: { /* codegen defaults */ } },
+  { auth: { loginUrl: '/custom/login/', userUrl: '/custom/me/' } } // runtime override
+);
+
+<AuthProvider api={client.api} auth={{ loginUrl: '/custom/login/' }}>
+  {/* ... */}
+</AuthProvider>
+```
+
 ## Dependencies
 - `axios`, `@tanstack/react-query`, `@tanstack/react-query-next-experimental`
 

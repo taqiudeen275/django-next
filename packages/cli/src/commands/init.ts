@@ -7,6 +7,12 @@ export function initCommand() {
 const config: DjangoNextConfig = {
   schema: "http://127.0.0.1:8000/api/schema/",
   output: "./.django-next",
+  auth: {
+    loginUrl: "/api/auth/login/",
+    logoutUrl: "/api/auth/logout/",
+    userUrl: "/api/auth/me/",
+    refreshUrl: "/api/auth/refresh/",
+  },
 };
 export default config;
 `;

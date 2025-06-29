@@ -9,6 +9,10 @@
 		"zod-openapi": "^1.0.2"
 	},
 	"scripts": {
-		"cli:generate": "ts-node packages/cli/src/index.ts generate"
+		"cli:generate": "ts-node packages/cli/src/index.ts generate",
+		"cli:init": "ts-node packages/cli/src/index.ts init"
+	},
+	"dependencies": {
+		"axios": "^1.10.0"
 	}
 }
