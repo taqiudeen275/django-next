@@ -4,7 +4,7 @@ import path from 'path';
 export function initCommand() {
   const configPath = path.resolve(process.cwd(), 'django.config.js');
   const content = `
-const config = {
+module.exports  = {
   schema: "http://127.0.0.1:8000/api/schema/",
   output: "./.django-next",
   auth: {
@@ -14,7 +14,6 @@ const config = {
     refreshUrl: "/api/auth/refresh/",
   },
 };
-export default config;
 `;
   if (fs.existsSync(configPath)) {
     console.log('django.config.ts already exists.');
