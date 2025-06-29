@@ -1,5 +1,10 @@
 /.django-next
 /node_modules/
+/packages/cli/node_modules/
+/packages/client/node_modules/
 /dist
 /dist/
 django.config.js
+PRD2.md
+PRD2_cont.md
+PRD2Full.md
