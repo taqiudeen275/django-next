@@ -42,7 +42,15 @@ export async function generate(config: any) {
 }
 
 function generateApiClass(endpoints: any[]) {
-  let methods = endpoints.map(ep => `  async ${ep.operationId}(params?: types.paths["${ep.path}"]["${ep.method}"] extends { parameters: infer P } ? P : undefined): Promise<types.paths["${ep.path}"]["${ep.method}"] extends { responses: { 200: { content: infer R } } } ? R : any> {\n    // TODO: Validate params with validators.${ep.operationId}Schema if available\n    // Example: validators.${ep.operationId}Schema.parse(params);\n    const safeParams = params ?? {};\n    return this.axios.${ep.method}('${ep.path}', safeParams);\n  }`).join('\n\n');
+  let methods = endpoints.map(ep => {
+    // Prepare validator check if validatorName is present
+    const validatorCheck = ep.validatorName ? `if (validators.schemas && validators.schemas.${ep.validatorName}) {\n      validators.schemas.${ep.validatorName}.parse(params);\n    }\n` : '';
+    if (ep.method === 'get') {
+      return `  async ${ep.operationId}(params?: types.paths["${ep.path}"]["${ep.method}"] extends { parameters: infer P } ? P : undefined): Promise<types.paths["${ep.path}"]["${ep.method}"] extends { responses: { 200: { content: infer R } } } ? R : any> {\n    ${validatorCheck}    const safeParams = params ?? {};\n    return this.axios.get('${ep.path}', { params: safeParams });\n  }`;
+    } else {
+      return `  async ${ep.operationId}(params?: types.paths["${ep.path}"]["${ep.method}"] extends { parameters: infer P } ? P : undefined): Promise<types.paths["${ep.path}"]["${ep.method}"] extends { responses: { 200: { content: infer R } } } ? R : any> {\n    ${validatorCheck}    const safeParams = params ?? {};\n    return this.axios.${ep.method}('${ep.path}', safeParams);\n  }`;
+    }
+  }).join('\n\n');
   return `// api.ts - Generated API client\nimport axios, { AxiosInstance } from 'axios';\nimport * as validators from './validators';\nimport * as types from './types';\n\nexport class API {\n  private axios: AxiosInstance;\n  constructor(axiosInstance?: AxiosInstance) {\n    this.axios = axiosInstance || axios.create();\n  }\n\n${methods}\n}\n`;
 }
 
