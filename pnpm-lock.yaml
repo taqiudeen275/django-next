@@ -30,6 +30,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.1.6
         version: 19.1.6(@types/react@19.1.8)
+      openapi-typescript:
+        specifier: ^6.7.6
+        version: 6.7.6
       openapi-zod-client:
         specifier: ^1.18.3
         version: 1.18.3(react@19.1.0)

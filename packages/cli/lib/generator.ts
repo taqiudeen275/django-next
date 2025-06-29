@@ -13,12 +13,12 @@ export async function generate(config: any) {
   // 2. Generate types.ts using openapi-typescript
   const typesOut = path.join(config.output, 'types.ts');
   fs.mkdirSync(config.output, { recursive: true });
-  execSync(`npx openapi-typescript ${config.schema} --output ${typesOut}`);
+  execSync(`npx openapi-typescript ${config.schema} --output ${typesOut}`, { stdio: 'inherit' });
   printSuccess('Generated types.ts');
 
   // 3. Generate validators.ts using openapi-zod-client
   const validatorsOut = path.join(config.output, 'validators.ts');
-  execSync(`pnpm exec openapi-zod-client ${config.schema} --output ${validatorsOut}`);
+  execSync(`npx openapi-zod-client ${config.schema} --output ${validatorsOut}`, { stdio: 'inherit' });
   printSuccess('Generated validators.ts');
 
   // 4. Generate api.ts, hooks.ts, and actions.ts with type-safe signatures and param fix
