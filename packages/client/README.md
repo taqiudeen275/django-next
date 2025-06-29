@@ -21,6 +21,33 @@ To ensure secure authentication and session management, configure your Django ba
 - **CORS:** Configure CORS to only allow trusted origins and support credentials.
 - **Session Logout:** Invalidate refresh tokens on logout and clear cookies on both client and server.
 
+### Sample Django Cookie & CORS Settings
+```python
+# settings.py
+import os
+IS_LOCAL = os.environ.get("DJANGO_ENV") == "local"
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Strict"
+SESSION_COOKIE_SECURE = not IS_LOCAL  # Secure only in production
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Strict"
+CSRF_COOKIE_SECURE = not IS_LOCAL  # Secure only in production
+# If using JWT in cookies (e.g., with djangorestframework-simplejwt)
+SIMPLE_JWT = {
+    "AUTH_COOKIE": "access_token",
+    "AUTH_COOKIE_HTTP_ONLY": True,
+    "AUTH_COOKIE_SECURE": not IS_LOCAL,
+    "AUTH_COOKIE_SAMESITE": "Strict",
+    # ...other settings...
+}
+# CORS settings (if frontend and backend are on different ports)
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Frontend dev server
+    "https://your-production-domain.com",
+]
+```
+
 ## Quick Start
 1. Generate the SDK using the CLI:
    ```sh
