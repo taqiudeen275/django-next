@@ -22,16 +22,33 @@ export function parseSchema(schema: any) {
       }
       // For OpenAPI 3, requestBody may be used instead of parameters
       if (!validatorName && op.requestBody && op.requestBody.content) {
+        // Support multiple content types and fallback
         const content = op.requestBody.content;
-        const firstType = Object.keys(content)[0];
-        if (content[firstType] && content[firstType].schema && content[firstType].schema['$ref']) {
-          // Extract schema name from $ref
-          const ref = content[firstType].schema['$ref'];
-          validatorName = ref.split('/').pop();
+        const contentTypes = Object.keys(content);
+        let found = false;
+        for (const type of contentTypes) {
+          if (content[type] && content[type].schema && content[type].schema['$ref']) {
+            const ref = content[type].schema['$ref'];
+            validatorName = ref.split('/').pop();
+            found = true;
+            break;
+          }
+        }
+        if (!found && contentTypes.length > 0) {
+          // fallback: use first content type's schema name if available
+          const firstType = contentTypes[0];
+          if (content[firstType] && content[firstType].schema && content[firstType].schema.title) {
+            validatorName = content[firstType].schema.title;
+          }
         }
       }
+      // Fallback for missing operationId
+      let operationId = op.operationId;
+      if (!operationId) {
+        operationId = `${method}_${path.replace(/[\/{\}]/g, '_')}`.replace(/_+/g, '_');
+      }
       endpoints.push({
-        operationId: op.operationId,
+        operationId,
         method,
         path,
         tags: op.tags,

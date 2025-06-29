@@ -15,12 +15,18 @@ export function Protected({ children, fallback = null, hasAll, hasAnyRole }: Pro
 
   // RBAC logic
   if (hasAll && hasAll.length > 0) {
-    if (!user.roles || !hasAll.every(r => user.roles?.includes(r))) {
+    // Check both roles and permissions
+    const hasAllRoles = user.roles && hasAll.every(r => user.roles?.includes(r));
+    const hasAllPerms = user.permissions && hasAll.every(p => user.permissions?.includes(p));
+    if (!hasAllRoles && !hasAllPerms) {
       return <>{fallback}</>;
     }
   }
   if (hasAnyRole && hasAnyRole.length > 0) {
-    if (!user.roles || !hasAnyRole.some(r => user.roles?.includes(r))) {
+    // Check both roles and permissions
+    const hasAnyRoleMatch = user.roles && hasAnyRole.some(r => user.roles?.includes(r));
+    const hasAnyPermMatch = user.permissions && hasAnyRole.some(p => user.permissions?.includes(p));
+    if (!hasAnyRoleMatch && !hasAnyPermMatch) {
       return <>{fallback}</>;
     }
   }

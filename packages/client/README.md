@@ -1,111 +1,126 @@
 # @django-next/client
 
-## Purpose and Functionality
-This package provides the type-safe client SDK for integrating Django REST Framework APIs with Next.js apps. It includes a generated API client, React hooks, authentication/session management, RBAC utilities, file upload, and batch utilities.
+## Overview
+A type-safe, modern SDK for integrating Django REST Framework APIs with Next.js apps. Includes a generated API client, React hooks, authentication/session management, RBAC, file upload, and batch utilities.
 
-## Pseudocode / Logic Flow
-- `createDjangoClient`: Initializes axios, sets up interceptors, returns SDK object
-- `AuthProvider`/`useAuth`: Provides session state and auth actions
-- `Protected`: Conditionally renders children based on user roles/permissions
-- `uploadFile`: Utility for file uploads with progress
-- `batchApiCalls`: Utility for batching API client methods
-- `useBatchQuery`: React Query hook for batching queries
+## Features
+- Fully-typed API client and React hooks (generated from OpenAPI)
+- AuthProvider and useAuth for session management
+- Protected component for RBAC (roles & permissions)
+- File upload utility with progress tracking
+- Batch API calls and batch query hooks
+- Works with Next.js App Router, Server Components, and Server Actions
 
-## Key Functions
-- `createDjangoClient(config)`
-- `AuthProvider`, `useAuth`, `Protected`
-- `uploadFile(axiosInstance, endpoint, file, data?, options?)`
-- `batchApiCalls([fn1, fn2, ...])`
-- `useBatchQuery([query1, query2, ...])`
+## Quick Start
+1. Generate the SDK using the CLI:
+   ```sh
+   pnpm dlx @django-next/cli generate
+   ```
+2. Import and use the generated files in your Next.js app.
 
-## File Upload Utility
+## Usage Examples
+### API Client
+```ts
+import { API } from './.django-next/api';
+const api = new API();
+const data = await api.someEndpoint(params);
+```
 
-The `uploadFile` utility provides a simple way to upload files to your Django REST API using an axios instance. It supports progress tracking and additional form fields.
+### React Query Hooks
+```tsx
+import { useSomeEndpoint } from './.django-next/hooks';
+const { data, isLoading, error, isError } = useSomeEndpoint(params);
+if (isError) {
+  // Handle or display error.message
+}
+```
 
-### Usage
-```typescript
+### AuthProvider & useAuth
+```tsx
+import { AuthProvider, useAuth } from '@django-next/client';
+<AuthProvider api={api}>
+  <YourApp />
+</AuthProvider>
+```
+
+### Protected (RBAC)
+```tsx
+import { Protected } from '@django-next/client';
+<Protected hasAll={['admin']} fallback={<div>Access denied</div>}>
+  <AdminPanel />
+</Protected>
+```
+
+### File Upload
+```ts
 import { uploadFile } from '@django-next/client/upload-file';
 await uploadFile(api.axios, '/api/upload/', file, { extraField: 'value' }, {
   onProgress: (percent) => console.log(`Upload: ${percent}%`)
 });
 ```
 
-## Batch API Calls Utility
-
-The `batchApiCalls` utility lets you run multiple API client methods in parallel and get all results in order.
-
-### Usage
-```typescript
+### Batch API Calls
+```ts
 import { batchApiCalls } from '@django-next/client/batch-api-calls';
+// Atom mode (default): fail on first error
+try {
+  const results = await batchApiCalls([
+    () => api.getUser({ id: 1 }),
+    () => api.getPosts({ page: 1 }),
+  ]);
+} catch (err) {
+  // Handle/log error, inspect which call failed
+}
+// Non-atom mode: get all results/errors
 const results = await batchApiCalls([
   () => api.getUser({ id: 1 }),
   () => api.getPosts({ page: 1 }),
-]);
+], { atom: false });
+results.forEach((res, i) => {
+  if ('error' in res) {
+    // Handle error for call i
+  } else {
+    // Use result for call i
+  }
+});
 ```
 
-## Batch Query Hook
-
-The `useBatchQuery` hook lets you run multiple queries in parallel in React components using React Query.
-
-### Usage
-```typescript
+### Batch Query Hook
+```tsx
 import { useBatchQuery } from '@django-next/client/use-batch-query';
-const results = useBatchQuery([
-  { queryKey: ['user', 1], queryFn: () => api.getUser({ id: 1 }) },
-  { queryKey: ['posts', 1], queryFn: () => api.getPosts({ page: 1 }) },
+const { data, isLoading, error } = useBatchQuery([
+  { queryKey: ['user'], queryFn: () => api.getUser({ id: 1 }) },
+  { queryKey: ['posts'], queryFn: () => api.getPosts({ page: 1 }) },
 ]);
-```
-
-Each result in the array is a React Query result object (with `data`, `isLoading`, etc).
-
-## API Client and AuthProvider Interfaces
-
-### API Client Interface Example
-```typescript
-export interface DjangoNextApi {
-  _authConfig?: DjangoNextAuthConfig;
-  // Add your generated endpoint methods here, e.g.:
-  getUser(params: any): Promise<any>;
-  // ...
-}
-
-export interface DjangoNextAuthConfig {
-  loginUrl?: string;
-  logoutUrl?: string;
-  userUrl?: string;
-  refreshUrl?: string;
+if (error) {
+  // Show error message in UI
 }
 ```
 
-### AuthProvider Props Interface
-```typescript
-import { DjangoNextApi, DjangoNextAuthConfig } from '@django-next/client';
-
-interface AuthProviderProps {
-  api: DjangoNextApi;
-  auth?: DjangoNextAuthConfig; // Optional runtime override
-  children: React.ReactNode;
+### Server Actions (Next.js)
+```ts
+import { someEndpointAction } from './.django-next/actions';
+export async function action(formData) {
+  try {
+    return await someEndpointAction(formData);
+  } catch (err) {
+    // Handle/log error, return custom error response, etc.
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
 }
 ```
 
-### Usage Example (with runtime config)
-```typescript
-import { createDjangoClient, AuthProvider } from '@django-next/client';
+## Error Handling
+- **Hooks:** Use `error`/`isError` from React Query hooks to display or handle errors in your UI.
+- **Batch:**
+  - With `atom: true` (default): use try/catch to handle the first error.
+  - With `atom: false`: inspect each result; errors are returned as `{ error: string }` objects.
+- **Server Actions:** Always wrap generated actions in try/catch to handle errors gracefully. Actions return `{ error: string }` on failure.
 
-const client = createDjangoClient(
-  { baseUrl, apiClass, hooksObject, auth: { /* codegen defaults */ } },
-  { auth: { loginUrl: '/custom/login/', userUrl: '/custom/me/' } } // runtime override
-);
+## Troubleshooting
+- **Type errors:** Re-run codegen to sync with your API schema.
+- **Auth/session issues:** Check your Django backend and config.
+- **File upload issues:** Ensure your endpoint accepts `multipart/form-data`.
 
-<AuthProvider api={client.api} auth={{ loginUrl: '/custom/login/' }}>
-  {/* ... */}
-</AuthProvider>
-```
-
-## Dependencies
-- `axios`, `@tanstack/react-query`, `@tanstack/react-query-next-experimental`
-
-## Debugging Scenarios
-- Auth/session issues: Check cookies and API endpoints
-- Query/mutation errors: Inspect hook usage and API responses
-- Type errors: Run `npx tsc --noEmit` for diagnostics
+---
+For more, see the generated SDK docs in `.django-next/` after running the CLI.
