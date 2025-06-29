@@ -1,0 +1,5 @@
+/.django-next
+/node_modules/
+/dist
+/dist/
+django.config.js

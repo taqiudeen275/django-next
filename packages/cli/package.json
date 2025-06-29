@@ -1,0 +1,27 @@
+{
+  "name": "@django-next/cli",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "django-next": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b --watch",
+    "format": "prettier --write 'src/**/*.ts' 'src/**/*.tsx'",
+    "lint": "eslint 'src/**/*.ts' 'src/**/*.tsx'"
+  },
+  "dependencies": {
+    "commander": "^11.0.0",
+    "axios": "^1.6.0",
+    "openapi-typescript": "^6.5.0",
+    "zod-openapi": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "prettier": "^3.2.0",
+    "eslint": "^9.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

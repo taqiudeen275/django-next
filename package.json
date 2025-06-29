@@ -1,0 +1,13 @@
+{
+	"devDependencies": {
+		"@types/node": "^20.19.2",
+		"@types/react": "^19.1.8",
+		"@types/react-dom": "^19.1.6",
+		"openapi-zod-client": "^1.18.3",
+		"ts-node": "^10.9.2",
+		"zod-openapi": "^1.0.2"
+	},
+	"scripts": {
+		"cli:generate": "ts-node packages/cli/src/index.ts generate"
+	}
+}

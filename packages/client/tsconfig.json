@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/client",
+    "rootDir": "./src",
+    "composite": true,
+    "jsx": "react-jsx",
+    "types": ["react", "react-dom", "node"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
