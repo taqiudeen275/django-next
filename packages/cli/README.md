@@ -3,6 +3,37 @@
 ## Overview
 A modern CLI for initializing and generating a type-safe Django-Next client SDK from your Django REST Framework OpenAPI schema.
 
+## Recommended Installation & Usage
+
+- **Install the CLI as a dev dependency** (for codegen only):
+  - Using pnpm:
+    ```sh
+    pnpm add -D @django-next/cli
+    ```
+  - Using npm:
+    ```sh
+    npm install --save-dev @django-next/cli
+    ```
+- **Install the client SDK as a regular dependency** (for your app):
+  - Using pnpm:
+    ```sh
+    pnpm add @django-next/client
+    ```
+  - Using npm:
+    ```sh
+    npm install @django-next/client
+    ```
+- **Or use the CLI via pnpm dlx or npx for one-off codegen:**
+  ```sh
+  pnpm dlx @django-next/cli generate
+  # or
+  npx @django-next/cli generate
+  ```
+
+**Recommendation:**
+- Use `pnpm` or `npm` according to your project’s package manager.
+- Always install the CLI as a dev dependency and the client SDK as a runtime dependency for best practices, smaller production bundles, and easier upgrades.
+
 ## Features
 - Stylish, user-friendly CLI output (colors, boxes, icons)
 - `init` command: Generates a default `django.config.js`

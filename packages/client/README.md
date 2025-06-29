@@ -3,6 +3,47 @@
 ## Overview
 A type-safe, modern SDK for integrating Django REST Framework APIs with Next.js apps. Includes a generated API client, React hooks, authentication/session management, RBAC, file upload, and batch utilities.
 
+## Installation & Usage
+
+### Recommended: Separate CLI and SDK Packages
+This project is structured as a monorepo with two separate npm packages:
+- **@django-next/cli**: The CLI tool for code generation (dev-only)
+- **@django-next/client**: The runtime SDK for your app (production dependency)
+
+**Install both in your project:**
+
+#### Using pnpm
+```sh
+# Install the CLI as a dev dependency (for codegen only)
+pnpm add -D @django-next/cli
+# Install the client SDK as a regular dependency (for your app)
+pnpm add @django-next/client
+```
+
+#### Using npm
+```sh
+# Install the CLI as a dev dependency (for codegen only)
+npm install --save-dev @django-next/cli
+# Install the client SDK as a regular dependency (for your app)
+npm install @django-next/client
+```
+
+**Or use the CLI via pnpm dlx or npx for one-off codegen:**
+```sh
+pnpm dlx @django-next/cli generate
+# or
+npx @django-next/cli generate
+```
+
+- Use the CLI to generate/update the SDK in your project.
+- Use the client SDK in your Next.js or frontend app for API calls, auth, and utilities.
+
+**Why separate?**
+- Smaller production bundles (no CLI code in your app)
+- Faster installs and builds
+- Independent versioning and updates
+- Follows industry best practices
+
 ## Features
 - Fully-typed API client and React hooks (generated from OpenAPI)
 - AuthProvider and useAuth for session management
