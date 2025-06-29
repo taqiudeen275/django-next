@@ -14,6 +14,7 @@ This directory contains a fully type-safe, auto-generated SDK for your Django RE
    - `@tanstack/react-query`
    - `zod`
 2. Import the generated files as needed in your app.
+3. **Wrap your app with `ApiProvider` from `@django-next/client/api-context` and pass your configured API client.**
 
 ## Usage Examples
 ### API Client
@@ -23,10 +24,26 @@ const api = new API();
 const data = await api.someEndpoint(params);
 ```
 
-### React Query Hooks
+### React Query Hooks (with Context)
 ```tsx
+import { ApiProvider } from '@django-next/client/api-context';
+import { API } from './api';
 import { useSomeEndpoint } from './hooks';
-const { data, isLoading } = useSomeEndpoint(params);
+
+const api = new API(); // Optionally pass custom axios instance
+
+function App() {
+  return (
+    <ApiProvider api={api}>
+      <YourApp />
+    </ApiProvider>
+  );
+}
+
+function MyComponent() {
+  const { data, isLoading } = useSomeEndpoint(params);
+  // ...
+}
 ```
 
 ### Server Actions (Next.js)
@@ -40,6 +57,7 @@ export async function action(formData) {
 ## Extending & Customizing
 - Add custom logic to the API client or hooks as needed.
 - Use Zod validators for runtime validation.
+- You can provide a custom axios instance to the API client for advanced scenarios (SSR, custom headers, etc).
 
 ## Troubleshooting
 - If you see type errors, re-run the codegen to sync with your API schema.

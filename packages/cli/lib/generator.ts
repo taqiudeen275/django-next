@@ -51,12 +51,12 @@ function generateHooks(endpoints: any[]) {
     const paramsType = `types.paths["${ep.path}"]["${ep.method}"] extends { parameters: infer P } ? P : undefined`;
     const responseType = `types.paths["${ep.path}"]["${ep.method}"] extends { responses: { 200: { content: infer R } } } ? R : any`;
     if (ep.method === 'get') {
-      return `export function use${capitalize(ep.operationId)}(params?: ${paramsType}) {\n  return useQuery(['${ep.operationId}', params ?? {}], () => api.${ep.operationId}(params));\n}`;
+      return `export function use${capitalize(ep.operationId)}(params?: ${paramsType}) {\n  const api = useApi();\n  return useQuery({\n    queryKey: ['${ep.operationId}', params],\n    queryFn: () => api.${ep.operationId}(params),\n  });\n}`;
     } else {
-      return `export function use${capitalize(ep.operationId)}() {\n  const queryClient = useQueryClient();\n  return useMutation((data: ${paramsType}) => api.${ep.operationId}(data), {\n    onSuccess: () => {\n      queryClient.invalidateQueries(['${ep.operationId}']);\n    },\n  });\n}`;
+      return `export function use${capitalize(ep.operationId)}() {\n  const api = useApi();\n  const queryClient = useQueryClient();\n  return useMutation({\n    mutationFn: (data: ${paramsType}) => api.${ep.operationId}(data),\n    onSuccess: () => {\n      queryClient.invalidateQueries({ queryKey: ['${ep.operationId}'] });\n    },\n  });\n}`;
     }
   }).join('\n\n');
-  return `// hooks.ts - Generated React Query hooks\nimport { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';\nimport { API } from './api';\nimport * as types from './types';\n\nconst api = new API();\n\n${hooks}\n`;
+  return `// hooks.ts - Generated React Query hooks\nimport { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';\nimport { useApi } from '@django-next/client/api-context';\nimport * as types from './types';\n\n${hooks}\n`;
 }
 
 function generateActions(endpoints: any[]) {
@@ -85,6 +85,7 @@ This directory contains a fully type-safe, auto-generated SDK for your Django RE
    - @tanstack/react-query
    - zod
 2. Import the generated files as needed in your app.
+3. **Wrap your app with \`ApiProvider\` from \`@django-next/client/api-context\` and pass your configured API client.**
 
 ## Usage Examples
 ### API Client
