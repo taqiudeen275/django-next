@@ -3,6 +3,7 @@ import { fetchSchema, parseSchema } from './parser';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { printSuccess } from '../src/cli-ui';
 
 export async function generate(config: any) {
   // 1. Fetch and parse OpenAPI schema
@@ -13,12 +14,12 @@ export async function generate(config: any) {
   const typesOut = path.join(config.output, 'types.ts');
   fs.mkdirSync(config.output, { recursive: true });
   execSync(`npx openapi-typescript ${config.schema} --output ${typesOut}`);
-  console.log('Generated types.ts');
+  printSuccess('Generated types.ts');
 
   // 3. Generate validators.ts using openapi-zod-client
   const validatorsOut = path.join(config.output, 'validators.ts');
   execSync(`pnpm exec openapi-zod-client ${config.schema} --output ${validatorsOut}`);
-  console.log('Generated validators.ts');
+  printSuccess('Generated validators.ts');
 
   // 4. Generate api.ts, hooks.ts, and actions.ts with type-safe signatures and param fix
   const apiOut = path.join(config.output, 'api.ts');
@@ -27,18 +28,18 @@ export async function generate(config: any) {
   fs.writeFileSync(apiOut, generateApiClass(endpoints));
   fs.writeFileSync(hooksOut, generateHooks(endpoints));
   fs.writeFileSync(actionsOut, generateActions(endpoints));
-  console.log('Generated api.ts, hooks.ts, and actions.ts');
+  printSuccess('Generated api.ts, hooks.ts, and actions.ts');
 
   // 5. Always generate documentation files
   fs.writeFileSync(path.join(config.output, 'README.md'), sdkReadmeDoc());
   fs.writeFileSync(path.join(config.output, 'api.md'), apiDoc());
   fs.writeFileSync(path.join(config.output, 'hooks.md'), hooksDoc());
   fs.writeFileSync(path.join(config.output, 'actions.md'), actionsDoc());
-  console.log('Generated documentation files');
+  printSuccess('Generated documentation files');
 
   // 6. Format all generated files with Prettier
   execSync(`pnpm exec prettier --write "${config.output}/*.{ts,md}"`);
-  console.log('Formatted generated files with Prettier');
+  printSuccess('Formatted generated files with Prettier');
 }
 
 function generateApiClass(endpoints: any[]) {

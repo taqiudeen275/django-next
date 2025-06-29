@@ -11,6 +11,16 @@ A type-safe, modern SDK for integrating Django REST Framework APIs with Next.js 
 - Batch API calls and batch query hooks
 - Works with Next.js App Router, Server Components, and Server Actions
 
+## Backend Security Checklist (for Django)
+To ensure secure authentication and session management, configure your Django backend as follows:
+- **JWT in httpOnly Cookies:** Issue JWT access and refresh tokens only in `httpOnly`, `Secure`, `SameSite=Strict` cookies. Do not expose tokens in localStorage or headers.
+- **CSRF Protection:** Enable Django's CSRF middleware. Rotate CSRF tokens on login/logout and ensure the client updates the token.
+- **Token Expiry Handling:** On refresh token expiry or invalidation, return a clear error so the client can log out the user.
+- **Secure Cookie Flags:** Always set cookies with `Secure`, `HttpOnly`, and `SameSite=Strict` in production.
+- **No Sensitive Data in LocalStorage:** Never store sensitive tokens or user info in localStorage/sessionStorage.
+- **CORS:** Configure CORS to only allow trusted origins and support credentials.
+- **Session Logout:** Invalidate refresh tokens on logout and clear cookies on both client and server.
+
 ## Quick Start
 1. Generate the SDK using the CLI:
    ```sh
