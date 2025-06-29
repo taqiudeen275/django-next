@@ -1,5 +1,6 @@
 /.django-next
 /node_modules/
+packages/node_modules/
 /dist
 /dist/
 django.config.js
