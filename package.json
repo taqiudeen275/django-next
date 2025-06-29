@@ -4,10 +4,18 @@
 		"@types/react": "^19.1.8",
 		"@types/react-dom": "^19.1.6",
 		"openapi-zod-client": "^1.18.3",
+		"prettier": "^3.6.2",
 		"ts-node": "^10.9.2",
 		"zod-openapi": "^1.0.2"
 	},
 	"scripts": {
-		"cli:generate": "ts-node packages/cli/src/index.ts generate"
+		"cli:generate": "ts-node packages/cli/src/index.ts generate",
+		"cli:init": "ts-node packages/cli/src/index.ts init"
+	},
+	"dependencies": {
+		"@tanstack/react-query": "^5.81.5",
+		"@zodios/core": "^10.9.6",
+		"axios": "^1.10.0",
+		"zod": "^3.25.67"
 	}
 }

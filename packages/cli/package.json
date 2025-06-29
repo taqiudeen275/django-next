@@ -13,15 +13,17 @@
     "lint": "eslint 'src/**/*.ts' 'src/**/*.tsx'"
   },
   "dependencies": {
-    "commander": "^11.0.0",
     "axios": "^1.6.0",
+    "boxen": "^8.0.1",
+    "chalk": "^5.4.1",
+    "commander": "^11.0.0",
     "openapi-typescript": "^6.5.0",
     "zod-openapi": "^1.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "prettier": "^3.2.0",
+    "@types/node": "^20.0.0",
     "eslint": "^9.0.0",
-    "@types/node": "^20.0.0"
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0"
   }
 }
