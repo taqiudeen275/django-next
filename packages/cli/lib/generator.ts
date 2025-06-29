@@ -4,24 +4,43 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { printSuccess } from '../src/cli-ui';
+// import openapiTS from 'openapi-typescript';
+import { generateZodClientFromOpenAPI } from 'openapi-zod-client';
+import openapiTS from 'openapi-typescript/dist/index.js';
+
 
 export async function generate(config: any) {
   // 1. Fetch and parse OpenAPI schema
   const schema = await fetchSchema(config.schema);
   const endpoints = parseSchema(schema);
 
-  // 2. Generate types.ts using openapi-typescript
+  // 2. Generate types.ts using openapi-typescript programmatically
   const typesOut = path.join(config.output, 'types.ts');
   fs.mkdirSync(config.output, { recursive: true });
-  const openapiTypescriptBin = require.resolve('openapi-typescript/bin/cli.js');
-  execSync(`node "${openapiTypescriptBin}" ${config.schema} --output ${typesOut}`, { stdio: 'inherit' });
-  printSuccess('Generated types.ts');
+  
+  try {
+    const typesContent = await openapiTS(config.schema);
+    fs.writeFileSync(typesOut, typesContent);
+    printSuccess('Generated types.ts');
+  } catch (error) {
+    console.error('Error generating types.ts:', error);
+    throw error;
+  }
 
-  // 3. Generate validators.ts using openapi-zod-client
+  // 3. Generate validators.ts using openapi-zod-client programmatically
   const validatorsOut = path.join(config.output, 'validators.ts');
-  const openapiZodClientBin = require.resolve('openapi-zod-client/bin/cli.js');
-  execSync(`node "${openapiZodClientBin}" ${config.schema} --output ${validatorsOut}`, { stdio: 'inherit' });
-  printSuccess('Generated validators.ts');
+  
+  try {
+    const validatorsContent = await generateZodClientFromOpenAPI({
+      openApiDoc: schema, // Use the already fetched schema
+      distPath: validatorsOut,
+      // You can add more options here as needed
+    });
+    printSuccess('Generated validators.ts');
+  } catch (error) {
+    console.error('Error generating validators.ts:', error);
+    throw error;
+  }
 
   // 4. Generate api.ts, hooks.ts, and actions.ts with type-safe signatures and param fix
   const apiOut = path.join(config.output, 'api.ts');
@@ -38,10 +57,48 @@ export async function generate(config: any) {
   fs.writeFileSync(path.join(config.output, 'hooks.md'), hooksDoc());
   fs.writeFileSync(path.join(config.output, 'actions.md'), actionsDoc());
   printSuccess('Generated documentation files');
+  printSuccess('Generation Completed');
 
-  // 6. Format all generated files with Prettier
-  execSync(`pnpm exec prettier --write "${config.output}/*.{ts,md}"`);
-  printSuccess('Formatted generated files with Prettier');
+  // 6. Format all generated files with Prettier programmatically
+  // try {
+  //   // Use prettier programmatically instead of CLI
+  //   const prettier = await import('prettier');
+  //   const prettierConfig = await prettier.resolveConfig(config.output) || {};
+    
+  //   const filesToFormat = [
+  //     path.join(config.output, 'types.ts'),
+  //     path.join(config.output, 'validators.ts'),
+  //     path.join(config.output, 'api.ts'),
+  //     path.join(config.output, 'hooks.ts'),
+  //     path.join(config.output, 'actions.ts'),
+  //     path.join(config.output, 'README.md'),
+  //     path.join(config.output, 'api.md'),
+  //     path.join(config.output, 'hooks.md'),
+  //     path.join(config.output, 'actions.md'),
+  //   ];
+
+  //   for (const filePath of filesToFormat) {
+  //     if (fs.existsSync(filePath)) {
+  //       const content = fs.readFileSync(filePath, 'utf8');
+  //       const formatted = await prettier.format(content, {
+  //         ...prettierConfig,
+  //         filepath: filePath,
+  //       });
+  //       fs.writeFileSync(filePath, formatted);
+  //     }
+  //   }
+    
+  //   printSuccess('Formatted generated files with Prettier');
+  // } catch (error) {
+  //   console.warn('Warning: Could not format files with Prettier:', error);
+  //   // Fallback to CLI approach if programmatic fails
+  //   try {
+  //     execSync(`npx prettier --write "${config.output}/*.{ts,md}"`, { stdio: 'inherit' });
+  //     printSuccess('Formatted generated files with Prettier (CLI fallback)');
+  //   } catch (cliError) {
+  //     console.warn('Warning: Prettier formatting failed:', cliError);
+  //   }
+  // }
 }
 
 function generateApiClass(endpoints: any[]) {
@@ -67,7 +124,7 @@ function generateHooks(endpoints: any[]) {
       return `export function use${capitalize(ep.operationId)}() {\n  const api = useApi();\n  const queryClient = useQueryClient();\n  return useMutation({\n    mutationFn: (data: ${paramsType}) => api.${ep.operationId}(data),\n    onSuccess: () => {\n      queryClient.invalidateQueries({ queryKey: ['${ep.operationId}'] });\n    },\n  });\n}`;
     }
   }).join('\n\n');
-  return `// hooks.ts - Generated React Query hooks\nimport { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';\nimport { useApi } from '@django-next/client/api-context';\nimport * as types from './types';\n\n${hooks}\n`;
+  return `// hooks.ts - Generated React Query hooks\nimport { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';\nimport { useApi } from '@django-next/client';\nimport * as types from './types';\n\n${hooks}\n`;
 }
 
 function generateActions(endpoints: any[]) {
