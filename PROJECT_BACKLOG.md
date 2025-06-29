@@ -9,13 +9,14 @@
 - [~] Prettier formatting for generated code (basic, could be improved for custom formatting or error handling)
 
 ### Client Package
-- [~] `createDjangoClient` core logic (placeholder, needs real implementation)
-- [ ] API client with axios and interceptors (CSRF, auth refresh) (not implemented)
-- [~] React hooks for data fetching and mutations (context-based, integrated)
-- [~] AuthProvider and useAuth hook (placeholder, needs real auth logic)
+- [x] `createDjangoClient` core logic (now supports runtime config)
+- [x] API client with axios and interceptors (CSRF, auth refresh, JWT, runtime config)
+- [x] React hooks for data fetching and mutations (context-based, integrated)
+- [x] AuthProvider and useAuth hook (real logic, runtime config, type-safe)
 - [~] Protected component for RBAC (placeholder, needs real RBAC logic)
 - [x] File upload support with progress (`uploadFile` utility implemented)
 - [x] Batch utility (`batchApiCalls` and `useBatchQuery` implemented)
+- [x] Interfaces for API and Auth config, and improved documentation
 
 ## Task Prioritization & Sprint Planning
 
@@ -27,11 +28,11 @@
 
 ### Sprint 2 (Core Features)
 - [~] CLI: Schema parser, codegen, formatting (basic, needs polish)
-- [~] Client: API client, hooks, auth, RBAC (placeholders, needs implementation)
+- [x] Client: API client, hooks, auth, RBAC (all but RBAC logic done)
 
 ### Sprint 3 (Advanced Features & Polish)
 - [x] File upload, batch, cache invalidation (file upload and batch done)
-- [ ] Docs, tests, polish
+- [~] Docs, tests, polish (in progress)
 
 ## User Stories & Acceptance Criteria
 
@@ -45,7 +46,7 @@
 
 ### User Story 3: Typed API Client
 - As a developer, I can import the generated client and use it in Next.js apps
-- **Acceptance:** All endpoints are typed, hooks work, auth/session is managed (in progress)
+- **Acceptance:** All endpoints are typed, hooks work, auth/session is managed (done)
 
 ### User Story 4: Secure Auth & State
 - As a developer, I can use the AuthProvider and hooks for secure session management

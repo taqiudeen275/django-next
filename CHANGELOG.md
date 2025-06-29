@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.3] - 2025-06-29
+### Added
+- Runtime config support for authentication endpoints in `createDjangoClient` and `AuthProvider`.
+- Interfaces for API client (`DjangoNextApi`), auth config (`DjangoNextAuthConfig`), and `AuthProviderProps` for type safety and clarity.
+- Updated documentation to reflect runtime config and new interfaces.
+
+### Improved
+- Auth logic and client now use runtime config if provided, falling back to codegen config and sensible defaults.
+
+### In Progress
+- Further codegen and error handling enhancements.
+- More tests and documentation polish.
+
 ## [0.1.2] - 2025-06-29
 ### Added
 - File upload utility (`uploadFile`) with progress support and flexible API.

@@ -60,7 +60,17 @@ function generateHooks(endpoints: any[]) {
 }
 
 function generateActions(endpoints: any[]) {
-  let actions = endpoints.filter(ep => ['post', 'put', 'patch', 'delete'].includes(ep.method)).map(ep => `export async function ${ep.operationId}Action(params: types.paths["${ep.path}"]["${ep.method}"] extends { parameters: infer P } ? P : undefined) {\n  // TODO: Validate params with validators.${ep.operationId}Schema if available\n  // Example: validators.${ep.operationId}Schema.parse(params);\n  const api = new (await import('./api')).API();\n  return api.${ep.operationId}(params);\n}`).join('\n\n');
+  let actions = endpoints.filter(ep => ['post', 'put', 'patch', 'delete'].includes(ep.method)).map(ep => {
+    const validatorName = `${ep.operationId}Schema`;
+    return `export async function ${ep.operationId}Action(params: types.paths["${ep.path}"]["${ep.method}"] extends { parameters: infer P } ? P : undefined) {
+  // Validate params with Zod schema if available
+  if (validators.${validatorName}) {
+    validators.${validatorName}.parse(params);
+  }
+  const api = new (await import('./api')).API();
+  return api.${ep.operationId}(params);
+}`;
+  }).join('\n\n');
   return `// actions.ts - Generated Next.js server actions\nimport * as validators from './validators';\nimport * as types from './types';\n\n${actions}\n`;
 }
 

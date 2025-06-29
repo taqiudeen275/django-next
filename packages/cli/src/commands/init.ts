@@ -2,9 +2,9 @@ import fs from 'fs';
 import path from 'path';
 
 export function initCommand() {
-  const configPath = path.resolve(process.cwd(), 'django.config.ts');
-  const content = `import type { DjangoNextConfig } from '@django-next/cli';
-const config: DjangoNextConfig = {
+  const configPath = path.resolve(process.cwd(), 'django.config.js');
+  const content = `
+const config = {
   schema: "http://127.0.0.1:8000/api/schema/",
   output: "./.django-next",
   auth: {
