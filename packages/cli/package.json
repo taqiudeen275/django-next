@@ -1,11 +1,43 @@
 {
   "name": "@django-next/cli",
-  "version": "1.1.0",
+  "version": "2.0.0",
+  "description": "Generate type-safe Next.js SDKs from Django REST APIs with React Query hooks, Server Actions, and comprehensive TypeScript support",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "bin": {
     "django-next": "dist/src/index.js"
   },
+  "keywords": [
+    "django",
+    "nextjs",
+    "typescript",
+    "react-query",
+    "openapi",
+    "rest-api",
+    "code-generation",
+    "server-actions",
+    "zod",
+    "validation"
+  ],
+  "author": "Django-Next Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/django-next/django-next.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/django-next/django-next#readme",
+  "bugs": {
+    "url": "https://github.com/django-next/django-next/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -b",
     "dev": "tsc -b --watch",

@@ -1,8 +1,44 @@
 {
   "name": "@django-next/client",
-  "version": "1.1.0",
+  "version": "2.0.0",
+  "description": "React client package for Django-Next with authentication, RBAC, file uploads, and seamless integration with generated SDKs",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
+  "keywords": [
+    "django",
+    "nextjs",
+    "react",
+    "authentication",
+    "rbac",
+    "file-upload",
+    "react-query",
+    "typescript",
+    "client",
+    "api"
+  ],
+  "author": "Django-Next Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/taqiudeen275/django-next.git",
+    "directory": "packages/client"
+  },
+  "homepage": "https://github.com/taqiudeen275/django-next#readme",
+  "bugs": {
+    "url": "https://github.com/taqiudeen275/django-next/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc -b",
     "dev": "tsc -b --watch",

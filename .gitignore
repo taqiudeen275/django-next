@@ -4,7 +4,11 @@
 /packages/client/node_modules/
 /packages/cli/dist/
 /packages/client/dist/
+# Test files (excluded from npm publish)
 /packages/client/src/__tests__
+/packages/cli/src/__tests__
+/test-generation/
+/test-integration/
 
 /dist/
 django.config.js
