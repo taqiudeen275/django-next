@@ -25,3 +25,19 @@ export function printError(msg: string) {
 export function printInfo(msg: string) {
   console.log(chalk.blue('ℹ ' + msg));
 }
+
+export function printWarning(msg: string) {
+  console.log(chalk.yellow('⚠ ' + msg));
+}
+
+export function printDebug(msg: string) {
+  console.log(chalk.gray('🐛 ' + msg));
+}
+
+export function printStep(step: number, total: number, msg: string) {
+  console.log(chalk.cyan(`[${step}/${total}] `) + msg);
+}
+
+export function printProgress(msg: string) {
+  console.log(chalk.magenta('⏳ ' + msg));
+}

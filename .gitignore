@@ -4,9 +4,12 @@
 /packages/client/node_modules/
 /packages/cli/dist/
 /packages/client/dist/
+/packages/client/src/__tests__
 
 /dist/
 django.config.js
 PRD2_cont.md
 PRD2.md
 PRD2Full.md
+/test-integration/
+/test-generation/

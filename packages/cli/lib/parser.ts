@@ -1,9 +1,23 @@
 // parser.ts: Fetch and parse OpenAPI schema
 import axios from 'axios';
+import fs from 'fs';
 
 export async function fetchSchema(schemaUrl: string) {
-  const response = await axios.get(schemaUrl);
-  return response.data;
+  // Check if it's a file path or URL
+  try {
+    new URL(schemaUrl);
+    // It's a valid URL, fetch via HTTP
+    const response = await axios.get(schemaUrl);
+    return response.data;
+  } catch {
+    // It's a file path, read from filesystem
+    if (fs.existsSync(schemaUrl)) {
+      const content = fs.readFileSync(schemaUrl, 'utf8');
+      return JSON.parse(content);
+    } else {
+      throw new Error(`Schema file not found: ${schemaUrl}`);
+    }
+  }
 }
 
 export function parseSchema(schema: any) {
