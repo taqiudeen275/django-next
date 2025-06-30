@@ -7,11 +7,11 @@ const logger = createLogger('api-generator');
 
 export async function generateApiClass(config: any, endpoints: any[]): Promise<void> {
   logger.info(`Generating API client class with ${endpoints.length} endpoints`);
-  
+
   const apiOut = path.join(config.output, 'api.ts');
-  
+
   try {
-    const content = generateApiContent(endpoints);
+    const content = generateApiContent(config, endpoints);
     fs.writeFileSync(apiOut, content);
     logger.info('Successfully generated api.ts');
   } catch (error) {
@@ -20,7 +20,7 @@ export async function generateApiClass(config: any, endpoints: any[]): Promise<v
   }
 }
 
-function generateApiContent(endpoints: any[]): string {
+function generateApiContent(config: any, endpoints: any[]): string {
   const header = `// api.ts - Generated API client class
 // This file is auto-generated. Do not edit manually.
 // Generated at: ${new Date().toISOString()}
@@ -29,17 +29,44 @@ import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios';
 import * as validators from './validators';
 import * as types from './types';
 
+export interface DjangoAuthConfig {
+  loginUrl?: string;
+  logoutUrl?: string;
+  userUrl?: string;
+  refreshUrl?: string;
+}
+
 export interface ApiClientConfig {
   baseURL?: string;
   timeout?: number;
   withCredentials?: boolean;
   headers?: Record<string, string>;
+  auth?: DjangoAuthConfig;
 }
 
 export class ApiClient {
   private axios: AxiosInstance;
+  private config: ApiClientConfig;
 
   constructor(config?: ApiClientConfig, axiosInstance?: AxiosInstance) {
+    // Merge provided config with defaults including Django auth URLs from django.config.js
+    this.config = {
+      auth: {
+        loginUrl: '${config.auth?.loginUrl || '/api/auth/login/'}',
+        logoutUrl: '${config.auth?.logoutUrl || '/api/auth/logout/'}',
+        userUrl: '${config.auth?.userUrl || '/api/auth/me/'}',
+        refreshUrl: '${config.auth?.refreshUrl || '/api/auth/refresh/'}',
+      },
+      ...config,
+      auth: {
+        loginUrl: '${config.auth?.loginUrl || '/api/auth/login/'}',
+        logoutUrl: '${config.auth?.logoutUrl || '/api/auth/logout/'}',
+        userUrl: '${config.auth?.userUrl || '/api/auth/me/'}',
+        refreshUrl: '${config.auth?.refreshUrl || '/api/auth/refresh/'}',
+        ...config?.auth,
+      },
+    };
+
     this.axios = axiosInstance || axios.create({
       baseURL: config?.baseURL || '',
       timeout: config?.timeout || 30000,
@@ -54,6 +81,16 @@ export class ApiClient {
   // Get the underlying axios instance for advanced configuration
   getAxiosInstance(): AxiosInstance {
     return this.axios;
+  }
+
+  // Get the client configuration (for auth provider and other integrations)
+  getConfig(): ApiClientConfig {
+    return this.config;
+  }
+
+  // Get the base URL (convenience method)
+  getBaseURL(): string {
+    return this.config.baseURL || '';
   }
 
   // Helper method for file uploads with progress tracking
