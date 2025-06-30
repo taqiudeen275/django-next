@@ -1,6 +1,6 @@
 {
   "name": "@django-next/client",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "React client package for Django-Next with authentication, RBAC, file uploads, and seamless integration with generated SDKs",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
