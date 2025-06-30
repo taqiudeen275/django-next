@@ -11,7 +11,9 @@
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "jsx": "react-jsx",
     "skipLibCheck": true
+
   },
   "include": ["packages/**/*"],
   "exclude": ["node_modules", "dist"]

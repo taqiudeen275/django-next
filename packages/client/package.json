@@ -1,13 +1,53 @@
 {
   "name": "@django-next/client",
-  "version": "1.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "version": "2.0.0",
+  "description": "React client package for Django-Next with authentication, RBAC, file uploads, and seamless integration with generated SDKs",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "keywords": [
+    "django",
+    "nextjs",
+    "react",
+    "authentication",
+    "rbac",
+    "file-upload",
+    "react-query",
+    "typescript",
+    "client",
+    "api"
+  ],
+  "author": "Django-Next Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/taqiudeen275/django-next.git",
+    "directory": "packages/client"
+  },
+  "homepage": "https://github.com/taqiudeen275/django-next#readme",
+  "bugs": {
+    "url": "https://github.com/taqiudeen275/django-next/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc -b",
     "dev": "tsc -b --watch",
     "format": "prettier --write 'src/**/*.ts' 'src/**/*.tsx'",
-    "lint": "eslint 'src/**/*.ts' 'src/**/*.tsx'"
+    "lint": "eslint 'src/**/*.ts' 'src/**/*.tsx'",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ui": "jest --testPathPattern=components"
   },
   "dependencies": {
     "axios": "^1.6.0",
@@ -15,9 +55,17 @@
     "@tanstack/react-query-next-experimental": "^5.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "prettier": "^3.2.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/jest": "^29.5.0",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/user-event": "^14.0.0",
     "eslint": "^9.0.0",
-    "@types/node": "^20.0.0"
+    "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.5.0",
+    "prettier": "^3.2.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.4.0"
   }
 }

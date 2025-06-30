@@ -1,10 +1,19 @@
 /.django-next
 /node_modules/
-packages/cli/node_modules/
-packages/client/node_modules/
-/dist
+/packages/cli/node_modules/
+/packages/client/node_modules/
+/packages/cli/dist/
+/packages/client/dist/
+# Test files (excluded from npm publish)
+/packages/client/src/__tests__
+/packages/cli/src/__tests__
+/test-generation/
+/test-integration/
+
 /dist/
 django.config.js
 PRD2_cont.md
 PRD2.md
 PRD2Full.md
+/test-integration/
+/test-generation/
