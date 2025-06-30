@@ -59,18 +59,15 @@ django-next generate
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ApiProvider, AuthProvider } from '@django-next/client';
-import { ApiClient } from '../lib/api/api'; // Your generated API client
+import { api } from '../lib/api-client'; // Your configured API client
 import { useState } from 'react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
-  const [apiClient] = useState(() => new ApiClient({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-  }));
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ApiProvider api={apiClient}>
+      <ApiProvider api={api}>
         <AuthProvider>
           {children}
         </AuthProvider>
@@ -354,12 +351,62 @@ CORS_ALLOWED_ORIGINS = [
 ]
 ```
 
+## Setup
+
+### Recommended Setup (Using createDjangoClient)
+
+The recommended way to set up the client is using `createDjangoClient()` which ensures proper configuration:
+
+```typescript
+// lib/api-client.ts
+import { createDjangoClient } from '@django-next/client';
+import { ApiClient } from './api/api'; // Your generated API client
+
+export const { api, axiosInstance, config } = createDjangoClient({
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  apiClass: ApiClient,
+  auth: {
+    loginUrl: '/api/auth/login/',
+    logoutUrl: '/api/auth/logout/',
+    userUrl: '/api/auth/me/',
+    refreshUrl: '/api/auth/refresh/',
+  },
+  timeout: 30000,
+  withCredentials: true,
+  onError: (error) => console.error('API Error:', error),
+});
+```
+
+### Alternative Setup (Direct API Client)
+
+If you prefer to use the API client directly, make sure to provide a baseURL:
+
+```typescript
+// lib/api-client.ts
+import { ApiClient } from './api/api';
+
+export const api = new ApiClient({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  timeout: 30000,
+  withCredentials: true,
+  auth: {
+    loginUrl: '/api/auth/login/',
+    logoutUrl: '/api/auth/logout/',
+    userUrl: '/api/auth/me/',
+    refreshUrl: '/api/auth/refresh/',
+  },
+});
+```
+
+⚠️ **Important**: Always provide a `baseURL` when creating the API client directly, otherwise authentication and API calls may fail.
+
 ## Quick Start
 1. Generate the SDK using the CLI:
    ```sh
    pnpm dlx @django-next/cli generate
    ```
-2. Import and use the generated files in your Next.js app.
+2. Set up the client using one of the methods above.
+3. Import and use the generated files in your Next.js app.
 
 ## Usage Examples
 ### API Client
@@ -461,6 +508,66 @@ export async function action(formData) {
 - **Server Actions:** Always wrap generated actions in try/catch to handle errors gracefully. Actions return `{ error: string }` on failure.
 
 ## Troubleshooting
+
+### Common Configuration Issues
+
+#### Authentication requests go to wrong URL (e.g., `/auth` instead of `http://localhost:8000/api/auth/login/`)
+
+**Problem**: Login requests are being sent to relative paths without the base URL.
+
+**Solution**: Ensure you're providing a `baseURL` when creating the API client:
+
+```typescript
+// ❌ Wrong - missing baseURL
+const api = new ApiClient();
+
+// ✅ Correct - with baseURL
+const api = new ApiClient({
+  baseURL: 'http://localhost:8000',
+});
+
+// ✅ Better - use createDjangoClient
+const { api } = createDjangoClient({
+  baseUrl: 'http://localhost:8000',
+  apiClass: ApiClient,
+});
+```
+
+#### AuthProvider throws "axios instance not found" error
+
+**Problem**: The API client doesn't have a properly configured axios instance.
+
+**Solution**: Use `createDjangoClient()` or ensure your API client has the `_config` property set up correctly.
+
+#### Configuration not being applied
+
+**Problem**: Auth URLs or other configuration options are not being used.
+
+**Solution**: Make sure you're passing the configuration to the right place:
+
+```typescript
+// For createDjangoClient
+const { api } = createDjangoClient({
+  baseUrl: 'http://localhost:8000',
+  apiClass: ApiClient,
+  auth: {
+    loginUrl: '/api/auth/login/',
+    // ... other auth config
+  },
+});
+
+// For direct API client usage
+const api = new ApiClient({
+  baseURL: 'http://localhost:8000',
+  auth: {
+    loginUrl: '/api/auth/login/',
+    // ... other auth config
+  },
+});
+```
+
+### Other Common Issues
+
 - **Type errors:** Re-run codegen to sync with your API schema.
 - **Auth/session issues:** Check your Django backend and config.
 - **File upload issues:** Ensure your endpoint accepts `multipart/form-data`.

@@ -47,6 +47,7 @@ export interface ApiClientConfig {
 export class ApiClient {
   private axios: AxiosInstance;
   private config: ApiClientConfig;
+  public _config: any; // For compatibility with @django-next/client
 
   constructor(config?: ApiClientConfig, axiosInstance?: AxiosInstance) {
     // Merge provided config with defaults including Django auth URLs from django.config.js
@@ -76,6 +77,21 @@ export class ApiClient {
         ...config?.headers,
       },
     });
+
+    // Validate configuration for better error messages
+    if (!config?.baseURL && !axiosInstance) {
+      console.warn(
+        'ApiClient: No baseURL provided. This may cause issues with authentication and API calls. ' +
+        'Consider providing a baseURL in the config or using createDjangoClient() for better integration.'
+      );
+    }
+
+    // Set up _config for compatibility with @django-next/client
+    this._config = {
+      auth: this.config.auth,
+      baseUrl: this.config.baseURL || '',
+      axiosInstance: this.axios,
+    };
   }
 
   // Get the underlying axios instance for advanced configuration
@@ -91,6 +107,12 @@ export class ApiClient {
   // Get the base URL (convenience method)
   getBaseURL(): string {
     return this.config.baseURL || '';
+  }
+
+  // Update the axios instance and _config (used by createDjangoClient)
+  updateAxiosInstance(axiosInstance: AxiosInstance): void {
+    this.axios = axiosInstance;
+    this._config.axiosInstance = axiosInstance;
   }
 
   // Helper method for file uploads with progress tracking

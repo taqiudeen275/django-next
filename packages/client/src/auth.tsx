@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 export interface DjangoNextAuthConfig {
@@ -124,7 +124,16 @@ export function AuthProvider({ children, api, auth, fallbackComponent: FallbackC
   const authConfig = getAuthConfigFromApi(api, auth);
   const initializationRef = useRef(false);
 
-  const axiosInstance = api._config?.axiosInstance || axios;
+  // Ensure we always have a properly configured axios instance
+  const axiosInstance = api._config?.axiosInstance;
+
+  if (!axiosInstance) {
+    throw new Error(
+      'AuthProvider requires an API client with a configured axios instance. ' +
+      'Make sure you created your API client using createDjangoClient() or ' +
+      'passed a properly configured axios instance to your API client constructor.'
+    );
+  }
 
   // Permission and role checking functions
   const hasPermission = useCallback((permission: string): boolean => {

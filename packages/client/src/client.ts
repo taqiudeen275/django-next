@@ -69,6 +69,15 @@ function mergeAuthConfig(baseAuth?: AuthConfig, runtimeAuth?: Partial<AuthConfig
 
 // Enhanced client creation with better configuration and error handling
 export function createDjangoClient(config: DjangoClientConfig, runtimeConfig?: RuntimeConfig) {
+  // Validate required configuration
+  if (!config.baseUrl) {
+    throw new Error('createDjangoClient: baseUrl is required in the configuration');
+  }
+
+  if (!config.apiClass) {
+    throw new Error('createDjangoClient: apiClass is required in the configuration');
+  }
+
   // Merge configurations
   const authConfig = mergeAuthConfig(config.auth, runtimeConfig?.auth);
 
@@ -149,12 +158,20 @@ export function createDjangoClient(config: DjangoClientConfig, runtimeConfig?: R
   // Create API instance with enhanced configuration
   const api = new config.apiClass(axiosInstance);
 
-  // Attach configuration for use by other components
-  api._config = {
-    auth: authConfig,
-    baseUrl: config.baseUrl,
-    axiosInstance,
-  };
+  // Update configuration for use by other components
+  if (typeof api.updateAxiosInstance === 'function') {
+    // Use the new method if available (for generated API clients)
+    api.updateAxiosInstance(axiosInstance);
+    api._config.auth = authConfig;
+    api._config.baseUrl = config.baseUrl;
+  } else {
+    // Fallback for older or custom API clients
+    api._config = {
+      auth: authConfig,
+      baseUrl: config.baseUrl,
+      axiosInstance,
+    };
+  }
 
   // Return enhanced client object
   return {
