@@ -288,11 +288,8 @@ Conditionally render content based on authentication and permissions.
 
 ```typescript
 <Protected
-  requireAuth={true}                    // Require authentication
-  requirePermission="posts.view_post"   // Require specific permission
-  requireRole="admin"                   // Require specific role
-  requireStaff={true}                   // Require staff status
-  requireSuperuser={true}               // Require superuser status
+  hasAll={["posts.view_post"]}          // User must have ALL specified permissions
+  hasAnyRole={["admin", "moderator"]}   // User must have AT LEAST ONE of the specified roles
   requireAllPermissions={true}          // Require ALL permissions (default: any)
   fallback={<div>Access denied</div>}   // What to show when access denied
   onAccessDenied={() => console.log('Access denied')} // Callback
