@@ -23,8 +23,8 @@ program
 program
   .command('init')
   .description('Initialize Django-Next configuration file')
-  .option('-t, --typescript', 'Create TypeScript config (default)', true)
-  .option('-j, --javascript', 'Create JavaScript config')
+  .option('-t, --typescript', 'Create TypeScript config (Not recommended at the momment)')
+  .option('-j, --javascript', 'Create JavaScript config  (default. Recommended)', true)
   .option('-f, --force', 'Overwrite existing configuration')
   .option('-s, --schema <url>', 'OpenAPI schema URL')
   .option('-o, --output <dir>', 'Output directory for generated files')

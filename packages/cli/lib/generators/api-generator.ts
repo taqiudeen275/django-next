@@ -7,11 +7,11 @@ const logger = createLogger('api-generator');
 
 export async function generateApiClass(config: any, endpoints: any[]): Promise<void> {
   logger.info(`Generating API client class with ${endpoints.length} endpoints`);
-  
+
   const apiOut = path.join(config.output, 'api.ts');
-  
+
   try {
-    const content = generateApiContent(endpoints);
+    const content = generateApiContent(config, endpoints);
     fs.writeFileSync(apiOut, content);
     logger.info('Successfully generated api.ts');
   } catch (error) {
@@ -20,7 +20,7 @@ export async function generateApiClass(config: any, endpoints: any[]): Promise<v
   }
 }
 
-function generateApiContent(endpoints: any[]): string {
+function generateApiContent(config: any, endpoints: any[]): string {
   const header = `// api.ts - Generated API client class
 // This file is auto-generated. Do not edit manually.
 // Generated at: ${new Date().toISOString()}
@@ -38,6 +38,7 @@ export interface ApiClientConfig {
 
 export class ApiClient {
   private axios: AxiosInstance;
+  public _config: any; // For compatibility with @django-next/client
 
   constructor(config?: ApiClientConfig, axiosInstance?: AxiosInstance) {
     this.axios = axiosInstance || axios.create({
@@ -49,11 +50,34 @@ export class ApiClient {
         ...config?.headers,
       },
     });
+
+    // Set up _config for compatibility with @django-next/client
+    this._config = {
+      baseUrl: config?.baseURL || '',
+      axiosInstance: this.axios,
+    };
   }
 
   // Get the underlying axios instance for advanced configuration
   getAxiosInstance(): AxiosInstance {
     return this.axios;
+  }
+
+  // Update axios instance (used by DjangoNextProvider for configuration management)
+  updateAxiosInstance(axiosInstance: AxiosInstance): void {
+    this.axios = axiosInstance;
+    this._config.axiosInstance = axiosInstance;
+  }
+
+  // Get the base URL (convenience method)
+  getBaseURL(): string {
+    return this.config.baseURL || '';
+  }
+
+  // Update the axios instance and _config (used by createDjangoClient)
+  updateAxiosInstance(axiosInstance: AxiosInstance): void {
+    this.axios = axiosInstance;
+    this._config.axiosInstance = axiosInstance;
   }
 
   // Helper method for file uploads with progress tracking

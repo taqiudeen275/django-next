@@ -3,70 +3,135 @@
 [![npm version](https://badge.fury.io/js/%40django-next%2Fcli.svg)](https://badge.fury.io/js/%40django-next%2Fcli)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 
-> Command-line interface for generating type-safe Django REST API clients from OpenAPI schemas.
+> Generate type-safe Next.js SDKs from Django REST APIs with one command.
+
+## 🌟 What does this CLI do?
+
+The Django-Next CLI automatically generates a complete TypeScript SDK for your Django REST Framework API. It reads your Django API's OpenAPI schema and creates:
+
+- **TypeScript types** for all your Django models
+- **API client** with methods for every endpoint
+- **React Query hooks** for easy data fetching
+- **Server Actions** for Next.js forms
+- **Zod validators** for runtime type checking
+- **Complete documentation** with usage examples
+
+**Perfect for beginners!** No complex setup required.
 
 ## 🚀 Features
 
-- **🔧 Easy Setup**: Initialize configuration with a single command
-- **📝 TypeScript Support**: Generate fully typed clients from OpenAPI schemas
-- **🎯 Smart Generation**: Separate generators for types, validators, API clients, hooks, and actions
-- **📚 Auto Documentation**: Generate comprehensive documentation for your SDK
-- **🛠 Developer Experience**: Enhanced CLI with verbose logging and helpful error messages
-- **⚡ Fast**: Optimized generation process with parallel processing
+- **🔧 Zero Configuration**: One command generates everything
+- **📝 100% Type Safe**: Full TypeScript support from Django to React
+- **🎯 Complete SDK**: Everything you need for a modern Next.js app
+- **📚 Auto Documentation**: Comprehensive guides generated for you
+- **🛠 Beginner Friendly**: Clear error messages and helpful guidance
+- **⚡ Fast**: Generates large APIs in seconds
 
 ## 📦 Installation
 
-### Recommended: Development Dependency
+### Option 1: Global Installation (Recommended for beginners)
 
 ```bash
-# Using pnpm (recommended)
-pnpm add -D @django-next/cli
-
-# Using npm
-npm install --save-dev @django-next/cli
-
-# Using yarn
-yarn add -D @django-next/cli
-```
-
-### Alternative: Global Installation
-
-```bash
-# Install globally
+# Install once, use anywhere
 npm install -g @django-next/cli
 
-# Or use without installation
-npx @django-next/cli init
-pnpm dlx @django-next/cli generate
+# Now you can use 'django-next' command anywhere
+django-next --help
+```
+
+### Option 2: Project Installation
+
+```bash
+# Install in your Next.js project
+npm install --save-dev @django-next/cli
+
+# Use with npx
+npx django-next --help
+```
+
+### Don't forget the client package!
+
+```bash
+# Install the runtime client package in your Next.js project
+npm install @django-next/client @tanstack/react-query axios zod
 ```
 
 **💡 Recommendation:** Install as a dev dependency for better version control and team consistency.
 
-## 🏃‍♂️ Quick Start
+## 🏃‍♂️ Quick Start Guide
+
+### Step 1: Make sure your Django API is running
 
 ```bash
-# 1. Initialize configuration
-npx @django-next/cli init
-
-# 2. Generate SDK
-npx @django-next/cli generate
-
-# 3. Use in your Next.js app
-# See generated README.md for usage instructions
+# Your Django server should be running with DRF and OpenAPI schema
+# Usually at: http://localhost:8000/api/schema/
 ```
 
-## 📋 Commands
+### Step 2: Initialize configuration
 
-### `init`
+```bash
+# In your Next.js project root
+django-next init
 
-Initialize a Django-Next configuration file.
+# Or specify your Django API URL directly
+django-next init --schema http://localhost:8000/api/schema/ --output ./.django-next
+```
+
+This creates a `django.config.js` file like:
+
+```javascript
+// django.config.js
+module.exports = {
+  schema: "http://localhost:8000/api/schema/",
+  output: "./.django-next",
+  baseUrl: "http://localhost:8000",
+  auth: {
+    loginUrl: "/api/auth/login/",
+    logoutUrl: "/api/auth/logout/",
+    userUrl: "/api/auth/me/",
+    refreshUrl: "/api/auth/refresh/",
+  },
+};
+```
+
+### Step 3: Generate your SDK
+
+```bash
+# Generate complete TypeScript SDK
+django-next generate
+
+# See what's happening (recommended for first time)
+django-next generate --verbose
+```
+
+### Step 4: Check the generated files
+
+After generation, you'll have:
+
+```
+.django-next/
+├── types.ts        # TypeScript interfaces for all Django models
+├── api.ts          # API client with methods for every endpoint
+├── hooks.ts        # React Query hooks for data fetching
+├── actions.ts      # Server Actions for Next.js forms
+├── validators.ts   # Zod schemas for runtime validation
+└── README.md       # Usage guide with examples
+```
+
+## 📋 CLI Commands
+
+### `django-next init`
+
+Creates a configuration file for your project.
 
 ```bash
 django-next init [options]
 ```
 
 **Options:**
-- `-t, --typescript` - Create TypeScript config (default)
+- `-s, --schema <url>` - Django API schema URL (default: http://localhost:8000/api/schema/)
+- `-o, --output <path>` - Output directory (default: ./.django-next)
+- `-t, --typescript` - Create TypeScript config (default: true)
 - `-j, --javascript` - Create JavaScript config
 - `-f, --force` - Overwrite existing configuration
 - `-s, --schema <url>` - OpenAPI schema URL

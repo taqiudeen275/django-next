@@ -69,44 +69,67 @@ npm install axios @tanstack/react-query zod
 npm install @tanstack/react-query-next-experimental
 \`\`\`
 
-### 2. Setup API Client
+### 2. Setup Your Next.js App
 
 \`\`\`typescript
-import { ApiClient } from './.django-next/api';
-import { createDjangoClient } from '@django-next/client';
+// app/providers.tsx
+'use client';
 
-// Create API client
+import { DjangoNextProvider } from '@django-next/client';
+import { ApiClient } from './.django-next/api';
+
 const apiClient = new ApiClient({
-  baseURL: 'http://localhost:8000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   withCredentials: true,
 });
 
-// Create Django client with generated API
-const client = createDjangoClient({
-  baseUrl: 'http://localhost:8000',
-  apiClass: ApiClient,
-  hooksObject: {}, // Import hooks if needed
-});
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <DjangoNextProvider
+      apiClient={apiClient}
+      authConfig={{
+        loginUrl: '/api/auth/login/',
+        logoutUrl: '/api/auth/logout/',
+        userUrl: '/api/auth/me/',
+        refreshUrl: '/api/auth/refresh/',
+      }}
+    >
+      {children}
+    </DjangoNextProvider>
+  );
+}
 \`\`\`
 
-### 3. Use in React Components
+### 3. Use Generated Hooks in Components
 
 \`\`\`typescript
-import { useQuery } from '@tanstack/react-query';
-import { ApiClient } from './.django-next/api';
+// components/PostList.tsx
+import { useApi_posts_list, useApi_posts_create } from './.django-next/hooks';
 
-function MyComponent() {
-  const api = new ApiClient();
-  
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['example'],
-    queryFn: () => api.someEndpoint(),
+function PostList() {
+  // ✨ No setup needed - hooks work automatically!
+  const { data: posts, isLoading, error } = useApi_posts_list({
+    page: 1,
+    page_size: 10
+  });
+
+  const createPostMutation = useApi_posts_create({
+    onSuccess: () => console.log('Post created!'),
   });
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
-  
-  return <div>{JSON.stringify(data)}</div>;
+
+  return (
+    <div>
+      {posts?.results.map(post => (
+        <div key={post.id}>{post.title}</div>
+      ))}
+      <button onClick={() => createPostMutation.mutate({ title: 'New Post' })}>
+        Create Post
+      </button>
+    </div>
+  );
 }
 \`\`\`
 
@@ -472,45 +495,82 @@ interface ActionConfig {
 ### Environment Variables
 
 \`\`\`bash
+# Required: Django API URL
 DJANGO_API_URL=http://localhost:8000
-DJANGO_API_TOKEN=your-server-token
+
+# Optional: Custom JWT cookie names (should match Django settings)
+JWT_COOKIE_NAME=access_token
+JWT_REFRESH_COOKIE_NAME=refresh_token
 \`\`\`
+
+## Authentication
+
+Server actions use **user-aware authentication** by reading JWT tokens from HTTP-only cookies set by Django Simple JWT. This ensures that:
+
+- Each server action runs with the authenticated user's permissions
+- No static service tokens are needed
+- HTTP-only cookies provide maximum security
+- User context is automatically maintained across client and server
 
 ## Examples
 
-### Basic Server Action
+### User-Aware Server Action (Recommended)
 
 \`\`\`typescript
 // app/posts/actions.ts
-import { createPostAction } from '../.django-next/actions';
+import { createPostAction, isUserAuthenticated } from '../.django-next/actions';
 
 export async function createPost(formData: FormData) {
-  try {
-    const result = await createPostAction({
-      title: formData.get('title'),
-      content: formData.get('content'),
-    });
-    
-    return { success: true, data: result };
-  } catch (error) {
-    return { success: false, error: error.message };
+  // Check if user is authenticated
+  const isAuth = await isUserAuthenticated();
+  if (!isAuth) {
+    return { success: false, error: 'Authentication required' };
   }
+
+  // This will automatically use the user's JWT token from HTTP-only cookies
+  const result = await createPostAction({
+    title: formData.get('title'),
+    content: formData.get('content'),
+  });
+
+  return result; // Already wrapped in { success, data/error } format
 }
 \`\`\`
 
-### Custom Revalidation
+### Authentication Configuration
 
 \`\`\`typescript
-const result = await createPostAction(params, {
-  revalidateTags: ['posts', 'dashboard'],
-  revalidatePaths: ['/posts', '/dashboard'],
-});
+import { createPostAction, createAuthRequiredConfig, createPublicConfig } from '../.django-next/actions';
+
+// Explicitly require authentication (default behavior)
+const result = await createPostAction(params, createAuthRequiredConfig({
+  revalidateTags: ['posts'],
+}));
+
+// Allow anonymous access (for public endpoints only)
+const publicResult = await getPublicDataAction(params, createPublicConfig());
 \`\`\`
 
-### Error Handling
+### Authentication Context
 
 \`\`\`typescript
-import { ServerActionError, executeWithErrorHandling } from './actions';
+import { getAuthContext } from '../.django-next/actions';
+
+export async function checkAuthStatus() {
+  const authContext = await getAuthContext();
+
+  console.log('User authenticated:', authContext.isAuthenticated);
+  console.log('Valid token present:', authContext.hasValidToken);
+  console.log('Token present in cookies:', authContext.tokenPresent);
+
+  return authContext;
+}
+\`\`\`
+
+### Enhanced Error Handling
+
+\`\`\`typescript
+import { executeWithErrorHandling } from '../.django-next/actions';
 
 export async function safeCreatePost(data) {
   return executeWithErrorHandling(

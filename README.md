@@ -1,99 +1,556 @@
-# Django-Next SDK
+# Django-Next
 
 [![npm version](https://badge.fury.io/js/%40django-next%2Fcli.svg)](https://badge.fury.io/js/%40django-next%2Fcli)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> The definitive bridge between Django and Next.js - Generate type-safe, production-ready API clients from your Django REST Framework APIs.
+> Generate type-safe Next.js SDKs from Django REST APIs with React Query hooks, Server Actions, and comprehensive TypeScript support.
+
+## 🌟 What is Django-Next?
+
+Django-Next is a powerful toolkit that automatically generates type-safe TypeScript SDKs for your Django REST Framework APIs. It creates everything you need to build modern Next.js applications with full type safety, authentication, and best practices built-in.
+
+**Perfect for beginners and experts alike!**
 
 ## 🚀 Features
 
-- **🔒 Type-Safe**: Generate fully typed TypeScript clients from OpenAPI schemas
-- **⚡ Modern Stack**: Built for Next.js 15+ with App Router, Server Components, and Server Actions
-- **🔐 Secure by Default**: Automatic CSRF protection, JWT refresh, and httpOnly cookie support
-- **📁 File Uploads**: Built-in file upload support with progress tracking
-- **🎯 RBAC Ready**: Role-based access control with permissions and groups
-- **🔄 Smart Caching**: Optimized React Query configuration for Django REST APIs
-- **📚 Auto Documentation**: Comprehensive documentation generation
-- **🛠 Developer Experience**: Enhanced CLI with verbose logging and error handling
+- **🔧 Zero Configuration**: One command generates your entire SDK
+- **📝 100% Type Safe**: End-to-end TypeScript from Django models to React components
+- **🎯 Complete SDK**: API client, React hooks, Server Actions, and validators
+- **🔐 Authentication Ready**: Built-in login, logout, and protected routes
+- **📁 File Uploads**: Drag-and-drop file uploads with progress bars
+- **🛡️ RBAC Support**: Role-based access control and permissions
+- **⚡ Performance**: Optimized with React Query caching
+- **📚 Auto Documentation**: Comprehensive guides generated for you
 
 ## 📦 Installation
 
 ```bash
-# Install the CLI globally
+# Step 1: Install the CLI tool globally
 npm install -g @django-next/cli
 
-# Or use with npx
-npx @django-next/cli init
-
-# Install the client package in your Next.js project
-npm install @django-next/client axios @tanstack/react-query zod
+# Step 2: Install client package in your Next.js project
+npm install @django-next/client @tanstack/react-query axios zod
 ```
 
-## 🏃‍♂️ Quick Start
+## 🏃‍♂️ Quick Start Guide
 
-### 1. Initialize Configuration
+### Step 1: Create Configuration
+
+In your Next.js project root, create a configuration file:
 
 ```bash
-# Create configuration file
+# This creates a django.config.js file
 django-next init
 
-# Or with custom options
-django-next init --schema http://localhost:8000/api/schema/ --output ./src/api
+# Or specify your Django API URL directly
+django-next init --schema http://localhost:8000/api/schema/ --output ./.django-next
 ```
 
-### 2. Generate SDK
+### Step 2: Generate Your SDK
 
 ```bash
-# Generate type-safe client
+# Generate complete TypeScript SDK
 django-next generate
 
-# With verbose logging
+# See detailed output
 django-next generate --verbose
 ```
 
-### 3. Setup in Next.js
+This creates:
+- `.django-next/types.ts` - TypeScript interfaces for all your Django models
+- `.django-next/api.ts` - API client with all your endpoints
+- `.django-next/hooks.ts` - React Query hooks for data fetching
+- `.django-next/actions.ts` - Server Actions for forms
+- `.django-next/validators.ts` - Runtime validation with Zod
+
+### Step 3: Setup Your Next.js App
+
+Create a providers file to wrap your app:
 
 ```typescript
-// app/layout.tsx
-import { ApiProvider, AuthProvider } from '@django-next/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ApiClient } from './lib/api/api'; // Generated SDK
+// app/providers.tsx
+'use client';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+import { DjangoNextProvider } from '@django-next/client';
+import { ApiClient } from '../.django-next/api'; // Your generated API client
 
-// Create your API client instance with the generated SDK
 const apiClient = new ApiClient({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-  timeout: 30000,
   withCredentials: true,
 });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <DjangoNextProvider
+      apiClient={apiClient}
+      authConfig={{
+        loginUrl: '/api/auth/login/',
+        logoutUrl: '/api/auth/logout/',
+        userUrl: '/api/auth/me/',
+        refreshUrl: '/api/auth/refresh/',
+      }}
+    >
+      {children}
+    </DjangoNextProvider>
+  );
+}
+```
+
+Then use it in your layout:
+
+```typescript
+// app/layout.tsx
+import { Providers } from './providers';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>
-        <QueryClientProvider client={queryClient}>
-          <ApiProvider api={apiClient}>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
-          </ApiProvider>
-        </QueryClientProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
 }
 ```
 
-## 🔗 Integration Architecture
+### Step 4: Create the useApi Hook
+
+The generated hooks need access to your API client. Create this file:
+
+```typescript
+// lib/hooks/useApi.ts
+import { useContext } from 'react';
+import { ApiContext } from '@django-next/client';
+import type { ApiClient } from '../api/api'; // Your generated API client type
+
+export function useApi(): ApiClient {
+  const context = useContext(ApiContext);
+
+  if (!context) {
+    throw new Error('useApi must be used within an ApiProvider');
+  }
+
+  return context.api as ApiClient;
+}
+
+// Make it globally available for generated hooks
+declare global {
+  function useApi(): ApiClient;
+}
+
+(globalThis as any).useApi = useApi;
+```
+
+That's it! Your Django-Next setup is complete. 🎉
+
+## 📖 Usage Examples
+
+### Basic Data Fetching
+
+```typescript
+// components/PostList.tsx
+import { useApi_posts_list } from '../.django-next/hooks'; // Generated hook
+
+export function PostList() {
+  const { data: posts, isLoading, error } = useApi_posts_list({
+    page: 1,
+    page_size: 10
+  });
+
+  if (isLoading) return <div>Loading posts...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      <h1>Posts</h1>
+      {posts?.data.results.map(post => (
+        <div key={post.id}>
+          <h2>{post.title}</h2>
+          <p>{post.content}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Authentication & Login
+
+```typescript
+// components/LoginForm.tsx
+import { useAuth } from '@django-next/client';
+import { useApi_auth_login_create } from '../lib/api/hooks'; // Generated hook
+import { useState } from 'react';
+
+export function LoginForm() {
+  const { isAuthenticated, user } = useAuth();
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+
+  const loginMutation = useApi_auth_login_create({
+    onSuccess: (data) => {
+      console.log('Login successful!', data);
+      // Auth state is automatically updated
+    },
+    onError: (error) => {
+      console.error('Login failed:', error);
+    }
+  });
+
+  if (isAuthenticated) {
+    return (
+      <div>
+        <p>Welcome back, {user?.username}!</p>
+        <button onClick={() => window.location.reload()}>
+          Logout
+        </button>
+      </div>
+    );
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginMutation.mutate(credentials);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div>
+        <label>Username:</label>
+        <input
+          type="text"
+          value={credentials.username}
+          onChange={(e) => setCredentials(prev => ({
+            ...prev,
+            username: e.target.value
+          }))}
+          required
+        />
+      </div>
+      <div>
+        <label>Password:</label>
+        <input
+          type="password"
+          value={credentials.password}
+          onChange={(e) => setCredentials(prev => ({
+            ...prev,
+            password: e.target.value
+          }))}
+          required
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={loginMutation.isPending}
+      >
+        {loginMutation.isPending ? 'Logging in...' : 'Login'}
+      </button>
+      {loginMutation.error && (
+        <p style={{ color: 'red' }}>
+          Error: {loginMutation.error.message}
+        </p>
+      )}
+    </form>
+  );
+}
+```
+
+### Protected Routes & RBAC
+
+```typescript
+// components/AdminPanel.tsx
+import { Protected } from '@django-next/client';
+import { useApi_users_list } from '../lib/api/hooks'; // Generated hook
+
+export function AdminPanel() {
+  return (
+    <Protected
+      requireAuth={true}
+      requirePermission="users.view_user"
+      fallback={<div>Access denied. Admin permissions required.</div>}
+    >
+      <AdminContent />
+    </Protected>
+  );
+}
+
+function AdminContent() {
+  const { data: users, isLoading } = useApi_users_list();
+
+  if (isLoading) return <div>Loading users...</div>;
+
+  return (
+    <div>
+      <h1>Admin Panel</h1>
+      <h2>Users ({users?.data.count})</h2>
+      {users?.data.results.map(user => (
+        <div key={user.id}>
+          <p>{user.username} - {user.email}</p>
+
+          <Protected requirePermission="users.change_user">
+            <button>Edit User</button>
+          </Protected>
+
+          <Protected requirePermission="users.delete_user">
+            <button>Delete User</button>
+          </Protected>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### File Uploads with Progress
+
+```typescript
+// components/FileUpload.tsx
+import { useApi_files_create } from '../lib/api/hooks'; // Generated hook
+import { useState } from 'react';
+
+export function FileUpload() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const uploadMutation = useApi_files_create({
+    onUploadProgress: (progress) => {
+      setUploadProgress(progress);
+    },
+    onSuccess: (data) => {
+      console.log('File uploaded successfully!', data);
+      setSelectedFile(null);
+      setUploadProgress(0);
+    },
+    onError: (error) => {
+      console.error('Upload failed:', error);
+      setUploadProgress(0);
+    }
+  });
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleUpload = () => {
+    if (!selectedFile) return;
+
+    uploadMutation.mutate({
+      file: selectedFile,
+      title: selectedFile.name,
+      description: 'Uploaded via Django-Next'
+    });
+  };
+
+  return (
+    <div>
+      <h2>Upload File</h2>
+
+      <input
+        type="file"
+        onChange={handleFileSelect}
+        accept="image/*,.pdf,.doc,.docx"
+      />
+
+      {selectedFile && (
+        <div>
+          <p>Selected: {selectedFile.name}</p>
+          <p>Size: {(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+
+          <button
+            onClick={handleUpload}
+            disabled={uploadMutation.isPending}
+          >
+            {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
+          </button>
+        </div>
+      )}
+
+      {uploadMutation.isPending && (
+        <div>
+          <div>Progress: {uploadProgress}%</div>
+          <div style={{
+            width: '100%',
+            height: '10px',
+            backgroundColor: '#f0f0f0',
+            borderRadius: '5px'
+          }}>
+            <div style={{
+              width: `${uploadProgress}%`,
+              height: '100%',
+              backgroundColor: '#4CAF50',
+              borderRadius: '5px',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+        </div>
+      )}
+
+      {uploadMutation.error && (
+        <p style={{ color: 'red' }}>
+          Upload failed: {uploadMutation.error.message}
+        </p>
+      )}
+    </div>
+  );
+}
+```
+
+### Server Actions for Forms
+
+```typescript
+// app/posts/create/page.tsx
+import { api_posts_createAction } from '../../../lib/api/actions'; // Generated action
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+
+async function createPostAction(formData: FormData) {
+  'use server';
+
+  try {
+    const result = await api_posts_createAction({
+      title: formData.get('title') as string,
+      content: formData.get('content') as string,
+      author: 1, // Get from session in real app
+    });
+
+    // Refresh the posts page to show the new post
+    revalidatePath('/posts');
+
+    // Redirect to the new post
+    redirect(`/posts/${result.data.id}`);
+  } catch (error) {
+    console.error('Failed to create post:', error);
+    // Handle error (you might want to use a state management solution)
+    throw error;
+  }
+}
+
+export default function CreatePostPage() {
+  return (
+    <div>
+      <h1>Create New Post</h1>
+
+      <form action={createPostAction}>
+        <div>
+          <label htmlFor="title">Title:</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            required
+            placeholder="Enter post title"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="content">Content:</label>
+          <textarea
+            id="content"
+            name="content"
+            required
+            rows={10}
+            placeholder="Write your post content here..."
+          />
+        </div>
+
+        <button type="submit">
+          Create Post
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+### Creating Data with Mutations
+
+```typescript
+// components/CreatePost.tsx
+import { useApi_posts_create } from '../lib/api/hooks'; // Generated hook
+import { useState } from 'react';
+
+export function CreatePost() {
+  const [formData, setFormData] = useState({
+    title: '',
+    content: ''
+  });
+
+  const createPostMutation = useApi_posts_create({
+    onSuccess: (data) => {
+      console.log('Post created!', data);
+      setFormData({ title: '', content: '' }); // Reset form
+      // Optionally redirect or show success message
+    },
+    onError: (error) => {
+      console.error('Failed to create post:', error);
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    createPostMutation.mutate({
+      title: formData.title,
+      content: formData.content,
+      author: 1 // Get from auth context in real app
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div>
+        <label>Title:</label>
+        <input
+          type="text"
+          value={formData.title}
+          onChange={(e) => setFormData(prev => ({
+            ...prev,
+            title: e.target.value
+          }))}
+          required
+        />
+      </div>
+
+      <div>
+        <label>Content:</label>
+        <textarea
+          value={formData.content}
+          onChange={(e) => setFormData(prev => ({
+            ...prev,
+            content: e.target.value
+          }))}
+          required
+          rows={5}
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={createPostMutation.isPending}
+      >
+        {createPostMutation.isPending ? 'Creating...' : 'Create Post'}
+      </button>
+
+      {createPostMutation.error && (
+        <p style={{ color: 'red' }}>
+          Error: {createPostMutation.error.message}
+        </p>
+      )}
+    </form>
+  );
+}
+```
+
+## 🔗 How It Works
 
 ### Generated SDK + Client Package Integration
 
@@ -590,6 +1047,104 @@ pnpm build
 pnpm dev
 ```
 
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### "useApi must be used within an ApiProvider"
+**Problem**: Generated hooks can't find the API client.
+**Solution**: Make sure you've implemented the `useApi` hook and wrapped your app with providers:
+
+```typescript
+// lib/hooks/useApi.ts - Create this file!
+import { useContext } from 'react';
+import { ApiContext } from '@django-next/client';
+import type { ApiClient } from '../api/api';
+
+export function useApi(): ApiClient {
+  const context = useContext(ApiContext);
+  if (!context) throw new Error('useApi must be used within ApiProvider');
+  return context.api as ApiClient;
+}
+
+(globalThis as any).useApi = useApi;
+```
+
+#### "Cannot find module '../lib/api/hooks'"
+**Problem**: SDK not generated or wrong path.
+**Solution**:
+1. Run `django-next generate` to create the SDK
+2. Check your `django.config.js` output path
+3. Make sure import paths match your output directory
+
+#### "Network Error" or CORS issues
+**Problem**: Django server not configured for frontend requests.
+**Solution**: In your Django settings:
+
+```python
+# settings.py
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Your Next.js dev server
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+# For development only
+CORS_ALLOW_ALL_ORIGINS = True  # Remove in production!
+```
+
+#### "CSRF token missing"
+**Problem**: Django CSRF protection blocking requests.
+**Solution**: The client package handles this automatically, but make sure:
+
+1. Your Django API includes CSRF tokens in responses
+2. You're using `withCredentials: true` in the API client
+3. Your Django settings allow the frontend origin
+
+#### TypeScript errors in generated files
+**Problem**: Generated code has type errors.
+**Solution**:
+1. Make sure your Django API is running when generating
+2. Check that your OpenAPI schema is valid
+3. Regenerate with `django-next generate --verbose` to see detailed errors
+
+### Getting Help
+
+1. **Check the generated README**: After running `django-next generate`, check the README in your output directory
+2. **Enable verbose logging**: Use `django-next generate --verbose` to see detailed output
+3. **Check your Django API**: Make sure your OpenAPI schema is accessible at the configured URL
+4. **Verify file paths**: Ensure all import paths in examples match your project structure
+
+### File Structure Reference
+
+After setup, your project should look like this:
+
+```
+your-nextjs-app/
+├── app/
+│   ├── layout.tsx          # Root layout with providers
+│   ├── providers.tsx       # React Query and Django-Next providers
+│   └── page.tsx           # Your pages
+├── lib/
+│   ├── api/               # Generated SDK (from django-next generate)
+│   │   ├── types.ts       # TypeScript interfaces
+│   │   ├── api.ts         # API client
+│   │   ├── hooks.ts       # React Query hooks
+│   │   ├── actions.ts     # Server Actions
+│   │   └── validators.ts  # Zod schemas
+│   └── hooks/
+│       └── useApi.ts      # Your useApi implementation
+├── components/            # Your React components
+├── django.config.js       # Django-Next configuration
+└── package.json
+```
+
+## 📚 Documentation
+
+- **[CLI Reference](./packages/cli/README.md)** - Command-line interface documentation
+- **[Client Package](./packages/client/README.md)** - React client package documentation
+- **[Integration Guide](./docs/INTEGRATION.md)** - Detailed setup and usage guide
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
@@ -604,3 +1159,5 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 ---
 
 **Made with ❤️ for the Django and Next.js communities**
+
+**Ready to build something amazing? Start with `npm install -g @django-next/cli` and `django-next init`!** 🚀

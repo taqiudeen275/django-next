@@ -1,6 +1,6 @@
 {
   "name": "@django-next/cli",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Generate type-safe Next.js SDKs from Django REST APIs with React Query hooks, Server Actions, and comprehensive TypeScript support",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
