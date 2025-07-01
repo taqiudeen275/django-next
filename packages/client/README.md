@@ -168,8 +168,7 @@ import { useApi_users_list } from '../lib/api/hooks'; // Generated hook
 export function AdminPanel() {
   return (
     <Protected
-      requireAuth={true}
-      requirePermission="users.view_user"
+      hasAll={["users.view_user"]}
       fallback={<div>Access denied. Admin permissions required.</div>}
     >
       <AdminContent />
@@ -178,27 +177,24 @@ export function AdminPanel() {
 }
 
 function AdminContent() {
-  const { data: users, isLoading } = useApi_users_list();
+  const { data: users, isLoading } = useUsersList();
 
   return (
     <div>
       <h1>Admin Panel</h1>
 
       {/* Only show edit button if user has permission */}
-      <Protected requirePermission="users.change_user">
+      <Protected hasAll={["users.change_user"]}>
         <button>Edit Users</button>
       </Protected>
 
       {/* Only show for staff members */}
-      <Protected requireStaff>
+      <RequireStaff>
         <button>Staff Only Feature</button>
-      </Protected>
+      </RequireStaff>
 
       {/* Multiple permissions required */}
-      <Protected
-        requirePermission={["users.add_user", "users.delete_user"]}
-        requireAllPermissions={true}
-      >
+      <Protected hasAll={["users.add_user", "users.delete_user"]}>
         <button>Advanced User Management</button>
       </Protected>
     </div>
@@ -730,7 +726,7 @@ const { api } = createDjangoClient({
 });
 ```
 
-#### AuthProvider throws "axios instance not found" error
+#### DjangoNextProvider throws "axios instance not found" error
 
 **Problem**: The API client doesn't have a properly configured axios instance.
 
