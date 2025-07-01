@@ -313,9 +313,10 @@ Conditionally render content based on authentication and permissions.
   <YourProtectedContent />
 </Protected>
 ```
+## Backend Security Checklist (for Django with Simple JWT)
 
-## Backend Security Checklist (for Django)
 To ensure secure authentication and session management, configure your Django backend as follows:
+
 - **JWT in httpOnly Cookies:** Issue JWT access and refresh tokens only in `httpOnly`, `Secure`, `SameSite=Strict` cookies. Do not expose tokens in localStorage or headers.
 - **CSRF Protection:** Enable Django's CSRF middleware. Rotate CSRF tokens on login/logout and ensure the client updates the token.
 - **Token Expiry Handling:** On refresh token expiry or invalidation, return a clear error so the client can log out the user.
@@ -324,30 +325,235 @@ To ensure secure authentication and session management, configure your Django ba
 - **CORS:** Configure CORS to only allow trusted origins and support credentials.
 - **Session Logout:** Invalidate refresh tokens on logout and clear cookies on both client and server.
 
-### Sample Django Cookie & CORS Settings
+### Django JWT HTTP-Only Cookie Setup
+
+Since Simple JWT doesn't support HTTP-only cookies by default, you need to create custom views and authentication. Here's the complete setup:
+
+#### 1. Install Required Packages
+```bash
+pip install djangorestframework
+pip install djangorestframework-simplejwt
+pip install django-cors-headers  # if you need CORS
+```
+
+#### 2. Django Settings Configuration
 ```python
 # settings.py
 import os
+from datetime import timedelta
+
 IS_LOCAL = os.environ.get("DJANGO_ENV") == "local"
+
+INSTALLED_APPS = [
+    # ... your other apps
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',  # For secure logout
+    'corsheaders',  # if using CORS
+]
+
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # if using CORS
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# Django REST Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'your_app.authentication.JWTCookieAuthentication',  # Your custom auth class
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+# Simple JWT settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,  # Generate new refresh token on refresh
+    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist old refresh tokens
+}
+
+# Custom JWT Cookie settings
+JWT_COOKIE_NAME = 'access_token'
+JWT_REFRESH_COOKIE_NAME = 'refresh_token'
+JWT_COOKIE_SECURE = not IS_LOCAL  # Secure only in production
+JWT_COOKIE_HTTP_ONLY = True
+JWT_COOKIE_SAME_SITE = 'Strict'
+
+# Standard Django cookie settings
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Strict"
-SESSION_COOKIE_SECURE = not IS_LOCAL  # Secure only in production
+SESSION_COOKIE_SECURE = not IS_LOCAL
+
 CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = "Strict"
-CSRF_COOKIE_SECURE = not IS_LOCAL  # Secure only in production
-# If using JWT in cookies (e.g., with djangorestframework-simplejwt)
-SIMPLE_JWT = {
-    "AUTH_COOKIE": "access_token",
-    "AUTH_COOKIE_HTTP_ONLY": True,
-    "AUTH_COOKIE_SECURE": not IS_LOCAL,
-    "AUTH_COOKIE_SAMESITE": "Strict",
-    # ...other settings...
-}
-# CORS settings (if frontend and backend are on different ports)
+CSRF_COOKIE_SECURE = not IS_LOCAL
+
+# CORS settings (if frontend and backend are on different ports/domains)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Frontend dev server
     "https://your-production-domain.com",
+]
+```
+
+#### 3. Create Custom Authentication Class
+Create `your_app/authentication.py`:
+
+```python
+# authentication.py
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.conf import settings
+
+class JWTCookieAuthentication(JWTAuthentication):
+    """
+    Custom JWT authentication that reads tokens from HTTP-only cookies
+    instead of Authorization headers
+    """
+    def authenticate(self, request):
+        # Get token from cookie
+        raw_token = request.COOKIES.get(settings.JWT_COOKIE_NAME)
+        
+        if raw_token is None:
+            return None
+        
+        # Validate token using Simple JWT's built-in validation
+        validated_token = self.get_validated_token(raw_token)
+        user = self.get_user(validated_token)
+        
+        return (user, validated_token)
+```
+
+#### 4. Create Custom Views for Cookie Management
+Create `your_app/views.py`:
+
+```python
+# views.py
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from django.conf import settings
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    """
+    Login view that sets JWT tokens in HTTP-only cookies
+    """
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        
+        if response.status_code == 200:
+            access_token = response.data['access']
+            refresh_token = response.data['refresh']
+            
+            # Remove tokens from response body for security
+            response.data = {'message': 'Login successful'}
+            
+            # Set access token cookie
+            response.set_cookie(
+                settings.JWT_COOKIE_NAME,
+                access_token,
+                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+                httponly=settings.JWT_COOKIE_HTTP_ONLY,
+                secure=settings.JWT_COOKIE_SECURE,
+                samesite=settings.JWT_COOKIE_SAME_SITE,
+            )
+            
+            # Set refresh token cookie
+            response.set_cookie(
+                settings.JWT_REFRESH_COOKIE_NAME,
+                refresh_token,
+                max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds(),
+                httponly=settings.JWT_COOKIE_HTTP_ONLY,
+                secure=settings.JWT_COOKIE_SECURE,
+                samesite=settings.JWT_COOKIE_SAME_SITE,
+            )
+        
+        return response
+
+class CookieTokenRefreshView(TokenRefreshView):
+    """
+    Token refresh view that handles HTTP-only cookies
+    """
+    def post(self, request, *args, **kwargs):
+        # Get refresh token from cookie
+        refresh_token = request.COOKIES.get(settings.JWT_REFRESH_COOKIE_NAME)
+        
+        if not refresh_token:
+            return Response(
+                {'error': 'Refresh token not found'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Add to request data for parent class processing
+        request.data['refresh'] = refresh_token
+        response = super().post(request, *args, **kwargs)
+        
+        if response.status_code == 200:
+            access_token = response.data['access']
+            response.data = {'message': 'Token refreshed'}
+            
+            # Set new access token cookie
+            response.set_cookie(
+                settings.JWT_COOKIE_NAME,
+                access_token,
+                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+                httponly=settings.JWT_COOKIE_HTTP_ONLY,
+                secure=settings.JWT_COOKIE_SECURE,
+                samesite=settings.JWT_COOKIE_SAME_SITE,
+            )
+        
+        return response
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def logout_view(request):
+    """
+    Logout view that clears HTTP-only cookies and blacklists refresh token
+    """
+    refresh_token = request.COOKIES.get(settings.JWT_REFRESH_COOKIE_NAME)
+    
+    # Blacklist the refresh token for security
+    if refresh_token:
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except Exception:
+            pass  # Token might already be invalid
+    
+    response = Response({'message': 'Logged out successfully'})
+    
+    # Clear both cookies
+    response.delete_cookie(settings.JWT_COOKIE_NAME)
+    response.delete_cookie(settings.JWT_REFRESH_COOKIE_NAME)
+    
+    return response
+```
+
+#### 5. Configure URLs
+In your `urls.py`:
+
+```python
+# urls.py
+from django.urls import path
+from .views import CookieTokenObtainPairView, CookieTokenRefreshView, logout_view
+
+urlpatterns = [
+    # Replace default Simple JWT URLs with cookie versions
+    path('api/token/', CookieTokenObtainPairView.as_view(), name='login'),
+    path('api/token/refresh/', CookieTokenRefreshView.as_view(), name='refresh'),
+    path('api/token/logout/', logout_view, name='logout'),
+    # ... your other URLs
 ]
 ```
 
