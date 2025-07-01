@@ -59,16 +59,41 @@ django-next generate
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ApiProvider, AuthProvider } from '@django-next/client';
-import { api } from '../lib/api-client'; // Your configured API client
+import ApiClient from '@/.django-next/api'; // Your configured API client
 import { useState } from 'react';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
+
+
+
+export const apiClient = new ApiClient({
+  baseURL: 'http://localhost:8000',
+  timeout: 30000,
+  withCredentials: true,
+
+  auth: {
+    loginUrl: '/api/auth/login/',
+    logoutUrl: '/api/auth/logout/',
+    userUrl: '/api/users/me/',
+    refreshUrl: '/api/auth/refresh/',
+  },
+});
+
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ApiProvider api={api}>
-        <AuthProvider>
+      <ApiProvider api={apiClient}>
+        <AuthProvider  api={apiClient}>
           {children}
         </AuthProvider>
       </ApiProvider>

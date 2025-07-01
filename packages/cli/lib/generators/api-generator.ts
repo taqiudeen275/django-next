@@ -52,12 +52,6 @@ export class ApiClient {
   constructor(config?: ApiClientConfig, axiosInstance?: AxiosInstance) {
     // Merge provided config with defaults including Django auth URLs from django.config.js
     this.config = {
-      // auth: {
-      //   loginUrl: '${config.auth?.loginUrl || '/api/auth/login/'}',
-      //   logoutUrl: '${config.auth?.logoutUrl || '/api/auth/logout/'}',
-      //   userUrl: '${config.auth?.userUrl || '/api/auth/me/'}',
-      //   refreshUrl: '${config.auth?.refreshUrl || '/api/auth/refresh/'}',
-      // },
       ...config,
       auth: {
         loginUrl: '${config.auth?.loginUrl || '/api/auth/login/'}',

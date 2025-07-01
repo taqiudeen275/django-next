@@ -472,45 +472,82 @@ interface ActionConfig {
 ### Environment Variables
 
 \`\`\`bash
+# Required: Django API URL
 DJANGO_API_URL=http://localhost:8000
-DJANGO_API_TOKEN=your-server-token
+
+# Optional: Custom JWT cookie names (should match Django settings)
+JWT_COOKIE_NAME=access_token
+JWT_REFRESH_COOKIE_NAME=refresh_token
 \`\`\`
+
+## Authentication
+
+Server actions use **user-aware authentication** by reading JWT tokens from HTTP-only cookies set by Django Simple JWT. This ensures that:
+
+- Each server action runs with the authenticated user's permissions
+- No static service tokens are needed
+- HTTP-only cookies provide maximum security
+- User context is automatically maintained across client and server
 
 ## Examples
 
-### Basic Server Action
+### User-Aware Server Action (Recommended)
 
 \`\`\`typescript
 // app/posts/actions.ts
-import { createPostAction } from '../.django-next/actions';
+import { createPostAction, isUserAuthenticated } from '../.django-next/actions';
 
 export async function createPost(formData: FormData) {
-  try {
-    const result = await createPostAction({
-      title: formData.get('title'),
-      content: formData.get('content'),
-    });
-    
-    return { success: true, data: result };
-  } catch (error) {
-    return { success: false, error: error.message };
+  // Check if user is authenticated
+  const isAuth = await isUserAuthenticated();
+  if (!isAuth) {
+    return { success: false, error: 'Authentication required' };
   }
+
+  // This will automatically use the user's JWT token from HTTP-only cookies
+  const result = await createPostAction({
+    title: formData.get('title'),
+    content: formData.get('content'),
+  });
+
+  return result; // Already wrapped in { success, data/error } format
 }
 \`\`\`
 
-### Custom Revalidation
+### Authentication Configuration
 
 \`\`\`typescript
-const result = await createPostAction(params, {
-  revalidateTags: ['posts', 'dashboard'],
-  revalidatePaths: ['/posts', '/dashboard'],
-});
+import { createPostAction, createAuthRequiredConfig, createPublicConfig } from '../.django-next/actions';
+
+// Explicitly require authentication (default behavior)
+const result = await createPostAction(params, createAuthRequiredConfig({
+  revalidateTags: ['posts'],
+}));
+
+// Allow anonymous access (for public endpoints only)
+const publicResult = await getPublicDataAction(params, createPublicConfig());
 \`\`\`
 
-### Error Handling
+### Authentication Context
 
 \`\`\`typescript
-import { ServerActionError, executeWithErrorHandling } from './actions';
+import { getAuthContext } from '../.django-next/actions';
+
+export async function checkAuthStatus() {
+  const authContext = await getAuthContext();
+
+  console.log('User authenticated:', authContext.isAuthenticated);
+  console.log('Valid token present:', authContext.hasValidToken);
+  console.log('Token present in cookies:', authContext.tokenPresent);
+
+  return authContext;
+}
+\`\`\`
+
+### Enhanced Error Handling
+
+\`\`\`typescript
+import { executeWithErrorHandling } from '../.django-next/actions';
 
 export async function safeCreatePost(data) {
   return executeWithErrorHandling(
