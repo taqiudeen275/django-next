@@ -5,10 +5,7 @@ export * from './components/Protected';
 export * from './upload-file';
 export * from './hooks/use-file-upload';
 
-// Legacy API context exports (for backward compatibility)
-export { ApiProvider, useApi, useAxiosInstance } from './api-context';
-
-// New unified provider exports (recommended)
+// Unified provider exports
 export {
   DjangoNextProvider,
   useApiContext,
@@ -37,11 +34,4 @@ export type {
   UploadFileOptions,
 } from './upload-file';
 
-export type {
-  ApiContextValue,
-  ApiProviderProps,
-} from './api-context';
-
-// export type {
-//   DjangoNextQueryProviderProps,
-// } from './query-provider'; // Excluded due to missing dev dependencies
+// Legacy types removed - use DjangoNextProvider types instead // Excluded due to missing dev dependencies

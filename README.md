@@ -156,10 +156,10 @@ That's it! Your Django-Next setup is complete. 🎉
 
 ```typescript
 // components/PostList.tsx
-import { useApi_posts_list } from '../.django-next/hooks'; // Generated hook
+import { usePostsList } from '../.django-next/hooks'; // Generated hook
 
 export function PostList() {
-  const { data: posts, isLoading, error } = useApi_posts_list({
+  const { data: posts, isLoading, error } = usePostsList({
     page: 1,
     page_size: 10
   });
@@ -606,7 +606,7 @@ This configuration is used to:
 
 ```typescript
 // components/PostList.tsx
-import { useApi_posts_list, useApi_posts_create } from '../lib/api/hooks'; // Generated
+import { usePostsList, usePostsCreate } from '../.django-next/hooks'; // Generated
 import { Protected } from '@django-next/client'; // Client package
 import { useState } from 'react';
 
@@ -619,13 +619,13 @@ export function PostList() {
     isLoading,
     error,
     refetch
-  } = useApi_posts_list({
+  } = usePostsList({
     page,
     page_size: 10
   });
 
   // Generated mutation hook
-  const createPost = useApi_posts_create({
+  const createPost = usePostsCreate({
     onSuccess: () => {
       refetch(); // Refresh the list
     }
@@ -986,7 +986,7 @@ function FileUploadForm() {
     maxFiles: 5,
   });
 
-  const { mutate: uploadFiles } = useUploadFiles({
+  const { mutate: uploadFiles } = useFilesUpload({
     onUploadProgress: (progress) => console.log(`Upload: ${progress}%`),
   });
 

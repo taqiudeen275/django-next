@@ -608,8 +608,8 @@ export const api = new ApiClient({
 ## Usage Examples
 ### API Client
 ```ts
-import { API } from './.django-next/api';
-const api = new API();
+import { ApiClient } from './.django-next/api';
+const api = new ApiClient();
 const data = await api.someEndpoint(params);
 ```
 

@@ -1,94 +1,50 @@
-// Enhanced Protected component for RBAC
+// Enhanced Protected component for RBAC - PRD Compliant
 import React from 'react';
 import { useAuth } from '../auth';
 
 interface ProtectedProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
-  loadingFallback?: React.ReactNode;
-  requireAuth?: boolean;
-  requiredRoles?: string[];
-  requiredPermissions?: string[];
-  requireAllRoles?: boolean;
-  requireAllPermissions?: boolean;
-  onAccessDenied?: () => void;
-  // Legacy props for backward compatibility
-  hasAll?: string[];
-  hasAnyRole?: string[];
+  // PRD-specified props (exact API from PRD)
+  hasAll?: string[];      // User must have ALL specified permissions
+  hasAnyRole?: string[];  // User must have AT LEAST ONE of the specified roles
 }
 
 export function Protected({
   children,
   fallback = <div>Access denied</div>,
-  loadingFallback = <div>Loading...</div>,
-  requireAuth = true,
-  requiredRoles = [],
-  requiredPermissions = [],
-  requireAllRoles = false,
-  requireAllPermissions = true,
-  onAccessDenied,
-  // Legacy props
   hasAll,
   hasAnyRole,
 }: ProtectedProps) {
   const {
     isAuthenticated,
     isLoading,
-    user,
     hasPermission,
-    hasRole,
     hasAnyRole: hasAnyRoleAuth,
-    hasAllRoles
   } = useAuth();
 
+  // Show loading state while checking authentication
   if (isLoading) {
-    return <>{loadingFallback}</>;
+    return <div>Loading...</div>;
   }
 
-  if (requireAuth && !isAuthenticated) {
-    onAccessDenied?.();
+  // Check if user is authenticated
+  if (!isAuthenticated) {
     return <>{fallback}</>;
   }
 
-  // Legacy support for hasAll and hasAnyRole props
+  // PRD Logic: hasAll - User must have ALL specified permissions
   if (hasAll && hasAll.length > 0) {
-    const hasAllRoles = user?.roles && hasAll.every(r => user.roles?.includes(r));
-    const hasAllPerms = user?.permissions && hasAll.every(p => user.permissions?.includes(p));
-    if (!hasAllRoles && !hasAllPerms) {
-      onAccessDenied?.();
+    const hasAllPermissions = hasAll.every(permission => hasPermission(permission));
+    if (!hasAllPermissions) {
       return <>{fallback}</>;
     }
   }
 
+  // PRD Logic: hasAnyRole - User must have AT LEAST ONE of the specified roles
   if (hasAnyRole && hasAnyRole.length > 0) {
-    const hasAnyRoleMatch = user?.roles && hasAnyRole.some(r => user.roles?.includes(r));
-    const hasAnyPermMatch = user?.permissions && hasAnyRole.some(p => user.permissions?.includes(p));
-    if (!hasAnyRoleMatch && !hasAnyPermMatch) {
-      onAccessDenied?.();
-      return <>{fallback}</>;
-    }
-  }
-
-  // New role checking logic
-  if (requiredRoles.length > 0) {
-    const roleCheck = requireAllRoles
-      ? hasAllRoles(requiredRoles)
-      : hasAnyRoleAuth(requiredRoles);
-
-    if (!roleCheck) {
-      onAccessDenied?.();
-      return <>{fallback}</>;
-    }
-  }
-
-  // New permission checking logic
-  if (requiredPermissions.length > 0) {
-    const permissionCheck = requireAllPermissions
-      ? requiredPermissions.every(permission => hasPermission(permission))
-      : requiredPermissions.some(permission => hasPermission(permission));
-
-    if (!permissionCheck) {
-      onAccessDenied?.();
+    const hasAnyOfTheRoles = hasAnyRoleAuth(hasAnyRole);
+    if (!hasAnyOfTheRoles) {
       return <>{fallback}</>;
     }
   }
@@ -96,10 +52,11 @@ export function Protected({
   return <>{children}</>;
 }
 
-// Convenience components for common patterns
+// Convenience components for common patterns using PRD-compliant API
 export function RequireAuth({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  // RequireAuth just checks authentication (no specific permissions/roles)
   return (
-    <Protected requireAuth={true} fallback={fallback}>
+    <Protected fallback={fallback}>
       {children}
     </Protected>
   );
@@ -115,7 +72,7 @@ export function RequireRole({
   fallback?: React.ReactNode;
 }) {
   return (
-    <Protected requiredRoles={[role]} fallback={fallback}>
+    <Protected hasAnyRole={[role]} fallback={fallback}>
       {children}
     </Protected>
   );
@@ -131,7 +88,7 @@ export function RequirePermission({
   fallback?: React.ReactNode;
 }) {
   return (
-    <Protected requiredPermissions={[permission]} fallback={fallback}>
+    <Protected hasAll={[permission]} fallback={fallback}>
       {children}
     </Protected>
   );
