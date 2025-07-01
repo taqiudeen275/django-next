@@ -69,44 +69,67 @@ npm install axios @tanstack/react-query zod
 npm install @tanstack/react-query-next-experimental
 \`\`\`
 
-### 2. Setup API Client
+### 2. Setup Your Next.js App
 
 \`\`\`typescript
-import { ApiClient } from './.django-next/api';
-import { createDjangoClient } from '@django-next/client';
+// app/providers.tsx
+'use client';
 
-// Create API client
+import { DjangoNextProvider } from '@django-next/client';
+import { ApiClient } from './.django-next/api';
+
 const apiClient = new ApiClient({
-  baseURL: 'http://localhost:8000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   withCredentials: true,
 });
 
-// Create Django client with generated API
-const client = createDjangoClient({
-  baseUrl: 'http://localhost:8000',
-  apiClass: ApiClient,
-  hooksObject: {}, // Import hooks if needed
-});
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <DjangoNextProvider
+      apiClient={apiClient}
+      authConfig={{
+        loginUrl: '/api/auth/login/',
+        logoutUrl: '/api/auth/logout/',
+        userUrl: '/api/auth/me/',
+        refreshUrl: '/api/auth/refresh/',
+      }}
+    >
+      {children}
+    </DjangoNextProvider>
+  );
+}
 \`\`\`
 
-### 3. Use in React Components
+### 3. Use Generated Hooks in Components
 
 \`\`\`typescript
-import { useQuery } from '@tanstack/react-query';
-import { ApiClient } from './.django-next/api';
+// components/PostList.tsx
+import { useApi_posts_list, useApi_posts_create } from './.django-next/hooks';
 
-function MyComponent() {
-  const api = new ApiClient();
-  
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['example'],
-    queryFn: () => api.someEndpoint(),
+function PostList() {
+  // ✨ No setup needed - hooks work automatically!
+  const { data: posts, isLoading, error } = useApi_posts_list({
+    page: 1,
+    page_size: 10
+  });
+
+  const createPostMutation = useApi_posts_create({
+    onSuccess: () => console.log('Post created!'),
   });
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
-  
-  return <div>{JSON.stringify(data)}</div>;
+
+  return (
+    <div>
+      {posts?.results.map(post => (
+        <div key={post.id}>{post.title}</div>
+      ))}
+      <button onClick={() => createPostMutation.mutate({ title: 'New Post' })}>
+        Create Post
+      </button>
+    </div>
+  );
 }
 \`\`\`
 

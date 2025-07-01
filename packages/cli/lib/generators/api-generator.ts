@@ -29,39 +29,18 @@ import axios, { AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios';
 import * as validators from './validators';
 import * as types from './types';
 
-export interface DjangoAuthConfig {
-  loginUrl?: string;
-  logoutUrl?: string;
-  userUrl?: string;
-  refreshUrl?: string;
-}
-
 export interface ApiClientConfig {
   baseURL?: string;
   timeout?: number;
   withCredentials?: boolean;
   headers?: Record<string, string>;
-  auth?: DjangoAuthConfig;
 }
 
 export class ApiClient {
   private axios: AxiosInstance;
-  private config: ApiClientConfig;
   public _config: any; // For compatibility with @django-next/client
 
   constructor(config?: ApiClientConfig, axiosInstance?: AxiosInstance) {
-    // Merge provided config with defaults including Django auth URLs from django.config.js
-    this.config = {
-      ...config,
-      auth: {
-        loginUrl: '${config.auth?.loginUrl || '/api/auth/login/'}',
-        logoutUrl: '${config.auth?.logoutUrl || '/api/auth/logout/'}',
-        userUrl: '${config.auth?.userUrl || '/api/auth/me/'}',
-        refreshUrl: '${config.auth?.refreshUrl || '/api/auth/refresh/'}',
-        ...config?.auth,
-      },
-    };
-
     this.axios = axiosInstance || axios.create({
       baseURL: config?.baseURL || '',
       timeout: config?.timeout || 30000,
@@ -72,18 +51,9 @@ export class ApiClient {
       },
     });
 
-    // Validate configuration for better error messages
-    if (!config?.baseURL && !axiosInstance) {
-      console.warn(
-        'ApiClient: No baseURL provided. This may cause issues with authentication and API calls. ' +
-        'Consider providing a baseURL in the config or using createDjangoClient() for better integration.'
-      );
-    }
-
     // Set up _config for compatibility with @django-next/client
     this._config = {
-      auth: this.config.auth,
-      baseUrl: this.config.baseURL || '',
+      baseUrl: config?.baseURL || '',
       axiosInstance: this.axios,
     };
   }
@@ -93,9 +63,10 @@ export class ApiClient {
     return this.axios;
   }
 
-  // Get the client configuration (for auth provider and other integrations)
-  getConfig(): ApiClientConfig {
-    return this.config;
+  // Update axios instance (used by DjangoNextProvider for configuration management)
+  updateAxiosInstance(axiosInstance: AxiosInstance): void {
+    this.axios = axiosInstance;
+    this._config.axiosInstance = axiosInstance;
   }
 
   // Get the base URL (convenience method)

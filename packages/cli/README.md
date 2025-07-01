@@ -74,7 +74,7 @@ npm install @django-next/client @tanstack/react-query axios zod
 django-next init
 
 # Or specify your Django API URL directly
-django-next init --schema http://localhost:8000/api/schema/ --output ./lib/api
+django-next init --schema http://localhost:8000/api/schema/ --output ./.django-next
 ```
 
 This creates a `django.config.js` file like:
@@ -83,7 +83,7 @@ This creates a `django.config.js` file like:
 // django.config.js
 module.exports = {
   schema: "http://localhost:8000/api/schema/",
-  output: "./lib/api",
+  output: "./.django-next",
   baseUrl: "http://localhost:8000",
   auth: {
     loginUrl: "/api/auth/login/",
@@ -109,7 +109,7 @@ django-next generate --verbose
 After generation, you'll have:
 
 ```
-lib/api/
+.django-next/
 ├── types.ts        # TypeScript interfaces for all Django models
 ├── api.ts          # API client with methods for every endpoint
 ├── hooks.ts        # React Query hooks for data fetching
@@ -130,7 +130,7 @@ django-next init [options]
 
 **Options:**
 - `-s, --schema <url>` - Django API schema URL (default: http://localhost:8000/api/schema/)
-- `-o, --output <path>` - Output directory (default: ./lib/api)
+- `-o, --output <path>` - Output directory (default: ./.django-next)
 - `-t, --typescript` - Create TypeScript config (default: true)
 - `-j, --javascript` - Create JavaScript config
 - `-f, --force` - Overwrite existing configuration

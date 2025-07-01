@@ -33,13 +33,10 @@ import {
   UseMutationOptions,
   QueryKey
 } from '@tanstack/react-query';
+import { useApiClient } from '@django-next/client';
 import { ApiClient } from './api';
 import * as types from './types';
 import { AxiosResponse, AxiosError } from 'axios';
-
-// Hook to get API client instance - you should implement this in your app
-// Example: const useApi = () => useMemo(() => new ApiClient({ baseURL: 'your-api-url' }), []);
-declare function useApi(): ApiClient;
 
 // Hook options types
 export interface QueryHookOptions<TData, TError = AxiosError> 
@@ -73,8 +70,8 @@ export function useInvalidateQueries() {
 
 export function usePrefetchQuery() {
   const queryClient = useQueryClient();
-  const api = useApi();
-  
+  const api = useApiClient<ApiClient>();
+
   return {
     prefetch: async <T>(queryKey: QueryKey, queryFn: () => Promise<AxiosResponse<T>>) => {
       await queryClient.prefetchQuery({ queryKey, queryFn });
@@ -113,7 +110,7 @@ export function ${hookName}(
   params?: ${paramsType},
   options?: QueryHookOptions<${responseType}>
 ) {
-  const api = useApi();
+  const api = useApiClient<ApiClient>();
   
   return useQuery({
     queryKey: queryKeys.${operationId}(params),
@@ -129,7 +126,7 @@ export function ${hookName}(
 export function ${hookName}(
   options?: MutationHookOptions<${responseType}, ${paramsType}>
 ) {
-  const api = useApi();
+  const api = useApiClient<ApiClient>();
   const queryClient = useQueryClient();
   
   return useMutation({

@@ -57,47 +57,27 @@ django-next generate
 // app/providers.tsx
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ApiProvider, AuthProvider } from '@django-next/client';
-import ApiClient from '@/.django-next/api'; // Your configured API client
-import { useState } from 'react';
+import { DjangoNextProvider } from '@django-next/client';
+import { ApiClient } from '../.django-next/api'; // Your generated API client
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-    },
-  },
-});
-
-
-
-export const apiClient = new ApiClient({
-  baseURL: 'http://localhost:8000',
-  timeout: 30000,
+const apiClient = new ApiClient({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   withCredentials: true,
-
-  auth: {
-    loginUrl: '/api/auth/login/',
-    logoutUrl: '/api/auth/logout/',
-    userUrl: '/api/users/me/',
-    refreshUrl: '/api/auth/refresh/',
-  },
 });
-
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <ApiProvider api={apiClient}>
-        <AuthProvider  api={apiClient}>
-          {children}
-        </AuthProvider>
-      </ApiProvider>
-    </QueryClientProvider>
+    <DjangoNextProvider
+      apiClient={apiClient}
+      authConfig={{
+        loginUrl: '/api/auth/login/',
+        logoutUrl: '/api/auth/logout/',
+        userUrl: '/api/auth/me/',
+        refreshUrl: '/api/auth/refresh/',
+      }}
+    >
+      {children}
+    </DjangoNextProvider>
   );
 }
 ```
@@ -121,23 +101,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-### Step 4: Create the useApi hook
+### Step 3: Use Generated Hooks
 
-```typescript
-// lib/hooks/useApi.ts
-import { useContext } from 'react';
-import { ApiContext } from '@django-next/client';
-import type { ApiClient } from '../api/api';
-
-export function useApi(): ApiClient {
-  const context = useContext(ApiContext);
-  if (!context) throw new Error('useApi must be used within ApiProvider');
-  return context.api as ApiClient;
-}
-
-// Make globally available for generated hooks
-(globalThis as any).useApi = useApi;
-```
+No additional setup needed! The hooks work automatically with DjangoNextProvider.
 
 ## 📖 Usage Examples
 
@@ -146,7 +112,7 @@ export function useApi(): ApiClient {
 ```typescript
 // components/LoginForm.tsx
 import { useAuth } from '@django-next/client';
-import { useApi_auth_login_create } from '../lib/api/hooks'; // Generated hook
+import { useApi_auth_login_create } from '../.django-next/hooks'; // Generated hook
 
 export function LoginForm() {
   const { isAuthenticated, user, logout } = useAuth();

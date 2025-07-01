@@ -44,7 +44,7 @@ In your Next.js project root, create a configuration file:
 django-next init
 
 # Or specify your Django API URL directly
-django-next init --schema http://localhost:8000/api/schema/ --output ./lib/api
+django-next init --schema http://localhost:8000/api/schema/ --output ./.django-next
 ```
 
 ### Step 2: Generate Your SDK
@@ -58,11 +58,11 @@ django-next generate --verbose
 ```
 
 This creates:
-- `lib/api/types.ts` - TypeScript interfaces for all your Django models
-- `lib/api/api.ts` - API client with all your endpoints
-- `lib/api/hooks.ts` - React Query hooks for data fetching
-- `lib/api/actions.ts` - Server Actions for forms
-- `lib/api/validators.ts` - Runtime validation with Zod
+- `.django-next/types.ts` - TypeScript interfaces for all your Django models
+- `.django-next/api.ts` - API client with all your endpoints
+- `.django-next/hooks.ts` - React Query hooks for data fetching
+- `.django-next/actions.ts` - Server Actions for forms
+- `.django-next/validators.ts` - Runtime validation with Zod
 
 ### Step 3: Setup Your Next.js App
 
@@ -72,37 +72,27 @@ Create a providers file to wrap your app:
 // app/providers.tsx
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ApiProvider, AuthProvider } from '@django-next/client';
-import { ApiClient } from '../lib/api/api'; // Your generated API client
-import { useState } from 'react';
+import { DjangoNextProvider } from '@django-next/client';
+import { ApiClient } from '../.django-next/api'; // Your generated API client
+
+const apiClient = new ApiClient({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  withCredentials: true,
+});
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Create React Query client
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        retry: 1,
-      },
-    },
-  }));
-
-  // Create API client with your Django URL
-  const [apiClient] = useState(() => new ApiClient({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-    timeout: 30000,
-    withCredentials: true,
-  }));
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <ApiProvider api={apiClient}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-      </ApiProvider>
-    </QueryClientProvider>
+    <DjangoNextProvider
+      apiClient={apiClient}
+      authConfig={{
+        loginUrl: '/api/auth/login/',
+        logoutUrl: '/api/auth/logout/',
+        userUrl: '/api/auth/me/',
+        refreshUrl: '/api/auth/refresh/',
+      }}
+    >
+      {children}
+    </DjangoNextProvider>
   );
 }
 ```
@@ -166,7 +156,7 @@ That's it! Your Django-Next setup is complete. 🎉
 
 ```typescript
 // components/PostList.tsx
-import { useApi_posts_list } from '../lib/api/hooks'; // Generated hook
+import { useApi_posts_list } from '../.django-next/hooks'; // Generated hook
 
 export function PostList() {
   const { data: posts, isLoading, error } = useApi_posts_list({

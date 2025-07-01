@@ -1,11 +1,21 @@
 // Entry point for @django-next/client
 export * from './client';
-export * from './api-context';
 export * from './auth';
-// export * from './query-provider'; // Excluded due to missing dev dependencies
 export * from './components/Protected';
 export * from './upload-file';
 export * from './hooks/use-file-upload';
+
+// Legacy API context exports (for backward compatibility)
+export { ApiProvider, useApi, useAxiosInstance } from './api-context';
+
+// New unified provider exports (recommended)
+export {
+  DjangoNextProvider,
+  useApiContext,
+  useApiClient,
+  useApiConfig,
+  DjangoApiContext
+} from './django-next-provider';
 
 // Re-export commonly used types
 export type {
