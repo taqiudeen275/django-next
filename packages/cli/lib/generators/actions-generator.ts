@@ -252,8 +252,22 @@ function generateAction(endpoint: any): string {
   const actionName = `${operationId}Action`;
   const tag = tags?.[0] || 'default';
   
-  const paramsType = `types.paths["${path}"]["${method}"] extends { parameters: infer P } ? P : undefined`;
-  const responseType = `types.paths["${path}"]["${method}"] extends { responses: { 200: { content: infer R } } } ? R : any`;
+  // Generate parameter types based on HTTP method and available parameters
+  let paramsType: string;
+  if (method === 'get') {
+    // For GET requests, use query parameters
+    paramsType = `types.paths["${path}"]["${method}"] extends { parameters: infer P } ? P : undefined`;
+  } else {
+    // For POST/PUT/PATCH requests, combine path parameters and request body
+    paramsType = `(types.paths["${path}"]["${method}"] extends { parameters: infer P } ? P : {}) &
+                  (types.paths["${path}"]["${method}"] extends { requestBody: { content: { "application/json": infer B } } } ? B :
+                   types.paths["${path}"]["${method}"] extends { requestBody: { content: { "multipart/form-data": infer B } } } ? B :
+                   types.paths["${path}"]["${method}"] extends { requestBody: { content: { "application/x-www-form-urlencoded": infer B } } } ? B : {})`;
+  }
+
+  // Generate response types (try multiple status codes)
+  const responseType = `types.paths["${path}"]["${method}"] extends { responses: { 200: { content: { "application/json": infer R } } } } ? R :
+                        types.paths["${path}"]["${method}"] extends { responses: { 201: { content: { "application/json": infer R } } } } ? R : any`;
   
   const validatorCheck = validatorName 
     ? `  // Validate parameters
@@ -312,11 +326,11 @@ ${validatorCheck}
     handleRevalidation(config, ['${tag}', '${operationId}']);
 
     // Log successful action with auth context
-    console.log(\`[SERVER_ACTION] \${actionName} executed successfully with user authentication\`);
+    console.log(\`[SERVER_ACTION] ${actionName} executed successfully with user authentication\`);
 
     return { success: true, data: response.data };
   } catch (error) {
-    console.error(\`[SERVER_ACTION] \${actionName} failed:\`, error);
+    console.error(\`[SERVER_ACTION] ${actionName} failed:\`, error);
 
     // Handle authentication errors specifically
     if (error.response?.status === 401) {

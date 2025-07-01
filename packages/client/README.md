@@ -168,8 +168,7 @@ import { useApi_users_list } from '../lib/api/hooks'; // Generated hook
 export function AdminPanel() {
   return (
     <Protected
-      requireAuth={true}
-      requirePermission="users.view_user"
+      hasAll={["users.view_user"]}
       fallback={<div>Access denied. Admin permissions required.</div>}
     >
       <AdminContent />
@@ -178,27 +177,24 @@ export function AdminPanel() {
 }
 
 function AdminContent() {
-  const { data: users, isLoading } = useApi_users_list();
+  const { data: users, isLoading } = useUsersList();
 
   return (
     <div>
       <h1>Admin Panel</h1>
 
       {/* Only show edit button if user has permission */}
-      <Protected requirePermission="users.change_user">
+      <Protected hasAll={["users.change_user"]}>
         <button>Edit Users</button>
       </Protected>
 
       {/* Only show for staff members */}
-      <Protected requireStaff>
+      <RequireStaff>
         <button>Staff Only Feature</button>
-      </Protected>
+      </RequireStaff>
 
       {/* Multiple permissions required */}
-      <Protected
-        requirePermission={["users.add_user", "users.delete_user"]}
-        requireAllPermissions={true}
-      >
+      <Protected hasAll={["users.add_user", "users.delete_user"]}>
         <button>Advanced User Management</button>
       </Protected>
     </div>
@@ -267,9 +263,9 @@ export function FileUpload() {
 
 ## 🔧 API Reference
 
-### AuthProvider
+### DjangoNextProvider
 
-Provides authentication state and methods throughout your app.
+Provides unified API client, authentication state, and React Query configuration throughout your app.
 
 ```typescript
 import { useAuth } from '@django-next/client';
@@ -292,11 +288,8 @@ Conditionally render content based on authentication and permissions.
 
 ```typescript
 <Protected
-  requireAuth={true}                    // Require authentication
-  requirePermission="posts.view_post"   // Require specific permission
-  requireRole="admin"                   // Require specific role
-  requireStaff={true}                   // Require staff status
-  requireSuperuser={true}               // Require superuser status
+  hasAll={["posts.view_post"]}          // User must have ALL specified permissions
+  hasAnyRole={["admin", "moderator"]}   // User must have AT LEAST ONE of the specified roles
   requireAllPermissions={true}          // Require ALL permissions (default: any)
   fallback={<div>Access denied</div>}   // What to show when access denied
   onAccessDenied={() => console.log('Access denied')} // Callback
@@ -608,8 +601,8 @@ export const api = new ApiClient({
 ## Usage Examples
 ### API Client
 ```ts
-import { API } from './.django-next/api';
-const api = new API();
+import { ApiClient } from './.django-next/api';
+const api = new ApiClient();
 const data = await api.someEndpoint(params);
 ```
 
@@ -622,12 +615,12 @@ if (isError) {
 }
 ```
 
-### AuthProvider & useAuth
+### DjangoNextProvider & useAuth
 ```tsx
-import { AuthProvider, useAuth } from '@django-next/client';
-<AuthProvider api={api}>
+import { DjangoNextProvider, useAuth } from '@django-next/client';
+<DjangoNextProvider apiClient={apiClient}>
   <YourApp />
-</AuthProvider>
+</DjangoNextProvider>
 ```
 
 ### Protected (RBAC)
@@ -730,7 +723,7 @@ const { api } = createDjangoClient({
 });
 ```
 
-#### AuthProvider throws "axios instance not found" error
+#### DjangoNextProvider throws "axios instance not found" error
 
 **Problem**: The API client doesn't have a properly configured axios instance.
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
 import { QueryClient, QueryClientProvider, QueryClientConfig } from '@tanstack/react-query';
 import { AxiosInstance, AxiosError } from 'axios';
 import { AuthProvider, DjangoNextAuthConfig } from './auth';
@@ -140,10 +140,8 @@ function EnhancedApiProvider<TApiClient>({
     withCredentials: true,
     ...initialConfig,
   }));
-  
+
   const [error, setError] = useState<Error | null>(null);
-  const [isReady, setIsReady] = useState(false);
-  const initRef = useRef(false);
 
   // Extract axios instance from API client
   const axiosInstance = useMemo(() => {
@@ -162,32 +160,37 @@ function EnhancedApiProvider<TApiClient>({
     });
   }, [onConfigUpdate]);
 
-  // Initialize and validate
-  useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
-
+  // Synchronous validation and initialization
+  const { isReady, initError } = useMemo(() => {
     try {
       // Validate API client
       if (!apiClient) {
-        throw new Error('ApiClient is required for DjangoNextProvider');
+        return { isReady: false, initError: new Error('ApiClient is required for DjangoNextProvider') };
       }
 
-      // Validate axios instance
+      // Validate axios instance (warning only, not blocking)
       if (!axiosInstance) {
         console.warn(
           'No axios instance found in API client. Make sure your API client is properly configured.'
         );
       }
 
-      setIsReady(true);
-      setError(null);
+      return { isReady: true, initError: null };
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Unknown initialization error');
-      setError(error);
-      onError?.(error);
+      return { isReady: false, initError: error };
     }
-  }, [apiClient, axiosInstance, onError]);
+  }, [apiClient, axiosInstance]);
+
+  // Handle initialization errors
+  useEffect(() => {
+    if (initError) {
+      setError(initError);
+      onError?.(initError);
+    } else {
+      setError(null);
+    }
+  }, [initError, onError]);
 
   const contextValue = useMemo<DjangoApiContextValue<TApiClient>>(() => ({
     client: apiClient,
@@ -195,9 +198,9 @@ function EnhancedApiProvider<TApiClient>({
     config,
     baseUrl: config.baseUrl,
     isReady,
-    error,
+    error: error || initError,
     updateConfig,
-  }), [apiClient, axiosInstance, config, isReady, error, updateConfig]);
+  }), [apiClient, axiosInstance, config, isReady, error, initError, updateConfig]);
 
   return (
     <DjangoApiContext.Provider value={contextValue}>
@@ -286,9 +289,15 @@ export function useApiContext<TApiClient = any>(): DjangoApiContextValue<TApiCli
   }
 
   if (!context.isReady) {
+    if (context.error) {
+      throw new Error(
+        `API context initialization failed: ${context.error.message}. ` +
+        'Check your API client configuration and ensure it has a valid axios instance.'
+      );
+    }
     throw new Error(
       'API context is not ready. This might indicate an initialization error. ' +
-      'Check the console for more details.'
+      'Check the console for more details and ensure your API client is properly configured.'
     );
   }
 
