@@ -266,13 +266,12 @@ export function LoginForm() {
 ```typescript
 // components/AdminPanel.tsx
 import { Protected } from '@django-next/client';
-import { useApi_users_list } from '../lib/api/hooks'; // Generated hook
+import { useUsersList } from '../.django-next/hooks'; // Generated hook
 
 export function AdminPanel() {
   return (
     <Protected
-      requireAuth={true}
-      requirePermission="users.view_user"
+      hasAll={["users.view_user"]}
       fallback={<div>Access denied. Admin permissions required.</div>}
     >
       <AdminContent />
@@ -281,7 +280,7 @@ export function AdminPanel() {
 }
 
 function AdminContent() {
-  const { data: users, isLoading } = useApi_users_list();
+  const { data: users, isLoading } = useUsersList();
 
   if (isLoading) return <div>Loading users...</div>;
 
@@ -293,11 +292,11 @@ function AdminContent() {
         <div key={user.id}>
           <p>{user.username} - {user.email}</p>
 
-          <Protected requirePermission="users.change_user">
+          <Protected hasAll={["users.change_user"]}>
             <button>Edit User</button>
           </Protected>
 
-          <Protected requirePermission="users.delete_user">
+          <Protected hasAll={["users.delete_user"]}>
             <button>Delete User</button>
           </Protected>
         </div>
@@ -565,17 +564,17 @@ Your Next.js App
 │   ├── types.ts        → TypeScript definitions
 │   └── validators.ts   → Zod schemas with runtime validation
 └── Client Package (@django-next/client)
-    ├── ApiProvider     → Context for API client
-    ├── AuthProvider    → Authentication state management
-    ├── Protected       → RBAC components
-    └── Utilities       → File upload, error handling, etc.
+    ├── DjangoNextProvider → Unified context provider
+    ├── Protected          → RBAC components
+    ├── Authentication     → Auth hooks and utilities
+    └── Utilities          → File upload, error handling, etc.
 ```
 
 ### How It Works
 
 1. **Generated ApiClient**: The CLI creates an `ApiClient` class that includes all your Django endpoints as type-safe methods
-2. **Client Package Integration**: The generated hooks use `useApi()` from the client package to access the ApiClient instance
-3. **Shared Context**: Both packages share the same API client instance through React Context
+2. **Client Package Integration**: The generated hooks use `useApiClient()` from the client package to access the ApiClient instance
+3. **Unified Provider**: `DjangoNextProvider` manages API client, authentication, and React Query state
 4. **Type Safety**: Complete end-to-end type safety from Django models to React components
 
 ### Configuration Integration
@@ -636,7 +635,7 @@ export function PostList() {
 
   return (
     <div>
-      <Protected requirePermission="posts.view_post">
+      <Protected hasAll={["posts.view_post"]}>
         <ul>
           {posts?.data.results.map(post => (
             <li key={post.id}>
@@ -664,7 +663,7 @@ export function PostList() {
         </div>
       </Protected>
 
-      <Protected requirePermission="posts.add_post">
+      <Protected hasAll={["posts.add_post"]}>
         <button
           onClick={() => createPost.mutate({
             title: 'New Post',
@@ -957,15 +956,15 @@ function Dashboard() {
   return (
     <div>
       <h1>Welcome, {user?.username}!</h1>
-      
-      <Protected requiredPermissions={['posts.add_post']}>
+
+      <Protected hasAll={['posts.add_post']}>
         <CreatePostButton />
       </Protected>
-      
+
       <RequireRole role="admin">
         <AdminPanel />
       </RequireRole>
-      
+
       {hasPermission('posts.delete_post') && (
         <DeleteAllButton />
       )}

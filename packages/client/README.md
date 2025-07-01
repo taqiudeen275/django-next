@@ -267,9 +267,9 @@ export function FileUpload() {
 
 ## 🔧 API Reference
 
-### AuthProvider
+### DjangoNextProvider
 
-Provides authentication state and methods throughout your app.
+Provides unified API client, authentication state, and React Query configuration throughout your app.
 
 ```typescript
 import { useAuth } from '@django-next/client';
@@ -622,12 +622,12 @@ if (isError) {
 }
 ```
 
-### AuthProvider & useAuth
+### DjangoNextProvider & useAuth
 ```tsx
-import { AuthProvider, useAuth } from '@django-next/client';
-<AuthProvider api={api}>
+import { DjangoNextProvider, useAuth } from '@django-next/client';
+<DjangoNextProvider apiClient={apiClient}>
   <YourApp />
-</AuthProvider>
+</DjangoNextProvider>
 ```
 
 ### Protected (RBAC)
